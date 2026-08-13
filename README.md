@@ -77,10 +77,12 @@
 安装（以 web profile 为例）：
 
 ```sh
-# 1. 把插件链进 profile 的依赖树（DSH 的 loader 按包名解析）
-ln -s "$(pwd)" ~/.dsh/profiles/web/node_modules/resanity
+# 1. 把插件链进 DSH 的共享依赖层（profiles 共用一个 node_modules，
+#    loader 按包名从这里解析；web profile 目录本身没有 node_modules）
+ln -s "$(pwd)" ~/.dsh/profiles/node_modules/resanity
+# 若装了 pnpm，等价命令：dsh plugin add resanity@link:"$(pwd)"
 
-# 2. 在 ~/.dsh/profiles/web/cordis.patch.yml 里插入一行插件：
+# 2. 在 ~/.dsh/profiles/web/cordis.patch.yml 里插入一个插件块：
 #    - insert:
 #        - id: resanity
 #          name: resanity
@@ -90,7 +92,9 @@ ln -s "$(pwd)" ~/.dsh/profiles/web/node_modules/resanity
 #            systemNotifications: true    # 系统通知（macOS/Linux）
 #            anchorsDirs: []              # 额外锚库目录（活跃会话工作区恒被扫描）
 
-# 3. 重启 dsh 生效；用 dsh --profile web --dump-config 确认 resanity 行已进组合
+# 3. 重启 dsh 生效；用 dsh --profile web --dump-config 确认 resanity 行已进组合。
+#    重启后验证：斜杠菜单（输入 /）出现 resanity-check 与 resanity-tushare；
+#    启动约 30 秒后插件跑第一次锚体检（有到期/临近锚会弹系统通知）。
 ```
 
 体检范围优先级：`$RESANITY_ANCHORS`（可用 `:` 分隔多目录）→ 配置 `anchorsDirs` → 所有活跃会话的 `<工作区>/anchors`。到期的锚会提醒"说「更新锚」即可"——检查是通知，更新永远是你的一句话。
@@ -141,6 +145,12 @@ ln -s "$(pwd)" ~/.dsh/profiles/web/node_modules/resanity
 - **没有 Tushare token 能用吗？** 能。A 股价格锚可换 BAOSTOCK（免 token）。想用 Tushare：DSH 里跑一次 `/resanity-tushare set <你的token>`（存 `~/.dsh/resanity/credentials.json`，仅脚本读取，不进日志和仓库）；其他环境设 `TUSHARE_TOKEN` 环境变量或 `RESANITY_CREDENTIALS` 指向凭据文件。token 永远是可选增强。
 - **数据存在哪？** 全部明文在你的机器上（`anchors/`、`journal/`）——换平台直接带走，没有任何厂商锁定。
 - **它是投资顾问吗？** 不是，也不打算是。它是你的研究员 + 账本 + 泼冷水专员。
+
+## 开发
+
+- 集成测试：`test/plugin.test.mjs`（真实 Cordis 上下文 + mock 服务，覆盖 provider/命令/定时器/凭据全路径）。本地跑前先把 DSH 的依赖链进仓库：`ln -s <dsh 安装目录>/node_modules node_modules`，然后 `node test/plugin.test.mjs`；
+- 改 `SKILL.md` 即时生效（DSH 每个 step 重新快照目录与正文）；改 `lib/index.js` 插件逻辑需重启 dsh；
+- 凭据文件、锚库、决策日志都在 `~/.dsh` 或工作区，`git status` 应始终干净。
 
 ## License
 
