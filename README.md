@@ -37,7 +37,7 @@
 
 ## 装起来（30 秒）
 
-1. 下载/克隆本仓库（其实只需要三个东西：`SKILL.md`、`anchors/`、`scripts/`）
+1. 下载/克隆本仓库（其实只需要四个东西：`SKILL.md`、`anchors/`、`scripts/`，可选 `tools/` 用于定时提醒；最省事是把整个仓库目录软链接过去）
 2. 放进你用的 agent 的 skills 目录：
 
 | 环境 | 放哪里 |
@@ -45,6 +45,7 @@
 | Claude Code / Claude 桌面 | `~/.claude/skills/` |
 | Codex（ChatGPT 桌面） | `~/.codex/skills/` |
 | Gemini CLI | `~/.gemini/skills/` |
+| DeepSeek Harness（dsh） | `~/.dsh/skills/resanity/`（`~/.agents/skills/` 也可）；项目级放 `<项目>/.dsh/skills/`。软链接可行：`ln -s "$(pwd)" ~/.dsh/skills/resanity` |
 | OpenClaw | workspace 的 skills 目录（ClawHub 支持从 Claude 格式一键导入） |
 | Hermes | skills 目录（开放 Agent Skills 标准，互通） |
 
@@ -61,6 +62,38 @@
 ```
 
 每个数字带来源链接和日期；查不到的东西它会明说"查不到"，而不是编一个给你。
+
+> DeepSeek Harness 用户：会话里输入 `/resanity` 会确定性加载全文；也可以直接问问题，模型按描述自动调用。锚库和决策日志落在**会话工作目录**（`anchors/`、`journal/`），不落在 skill 安装目录——换项目换锚库，换平台可整体带走。
+
+## DeepSeek Harness 插件部署（可选，推荐）
+
+本仓库同时是一个 dsh 插件包（`lib/index.js`），在"文件目录安装"之上再给四样东西：
+
+1. **内置 skill 分发**：插件把 `SKILL.md` 注册进 DSH 的 skill 注册表（rank 600，本地/项目副本可同名覆盖），其他 DSH 用户装上插件即得 skill；
+2. **锚体检定时提醒**：用 DSH 的 `ctx.timer` 每 6 小时扫一遍所有活跃会话工作区的 `anchors/`，到期/临近（默认 3 天窗口）弹系统通知——**不再需要 LaunchAgent/cron 挂 `tools/anchor_check.py`**；
+3. **`/resanity-check` 命令**：随时在会话里手动体检，等价于 `python3 tools/anchor_check.py --no-notify`，输出直接显示在命令面板；
+4. **`/resanity-tushare` 命令**：`set <token> | status | clear | test` 管理 Tushare token（价格锚用）。token 存 `~/.dsh/resanity/credentials.json`（600 权限），脚本自动回退读取，不用再 export 环境变量；该命令 `recordInput: false`，token 绝不进命令日志。
+
+安装（以 web profile 为例）：
+
+```sh
+# 1. 把插件链进 profile 的依赖树（DSH 的 loader 按包名解析）
+ln -s "$(pwd)" ~/.dsh/profiles/web/node_modules/resanity
+
+# 2. 在 ~/.dsh/profiles/web/cordis.patch.yml 里插入一行插件：
+#    - insert:
+#        - id: resanity
+#          name: resanity
+#          config:
+#            checkIntervalHours: 6        # 后台体检周期（小时）
+#            reminderWindowDays: 3        # 提前几天开始提醒
+#            systemNotifications: true    # 系统通知（macOS/Linux）
+#            anchorsDirs: []              # 额外锚库目录（活跃会话工作区恒被扫描）
+
+# 3. 重启 dsh 生效；用 dsh --profile web --dump-config 确认 resanity 行已进组合
+```
+
+体检范围优先级：`$RESANITY_ANCHORS`（可用 `:` 分隔多目录）→ 配置 `anchorsDirs` → 所有活跃会话的 `<工作区>/anchors`。到期的锚会提醒"说「更新锚」即可"——检查是通知，更新永远是你的一句话。
 
 ### 然后：养你的锚
 
@@ -89,6 +122,8 @@
 
 `tools/anchor_check.py` 是零依赖的确定性触发器检查（不调模型、不联网）：到期或临近三天时弹系统提醒。macOS 用 LaunchAgent 挂它，OpenClaw/Hermes 直接用它们的 cron。
 
+> DeepSeek Harness 用户不需要这一步：装上面的插件，定时提醒就是 DSH 原生的（见「DeepSeek Harness 插件部署」）。
+
 ## 它不做什么（诚实边界）
 
 - 不荐股、不下单、不设仓位、不承诺回报
@@ -97,13 +132,13 @@
 
 ## 为什么有效（不玄学，有数据）
 
-这套纪律不是拍脑袋：陷阱清单来自六个冻结投资案例的错误共识规律（"需求增长≠便宜"、"预披露≠最终法"、"计划产能≠已交付"……），并经过两次同模型盲评验证——主张正确率 100%、价格锚定有效性是裸模型的 **3.2 倍**、token 成本是裸模型的 **0.9 倍**。它赢的方式不是"信息更多"，是"判断更可验证、认知能累积"。
+这套纪律不是拍脑袋：陷阱清单来自六个冻结投资案例的错误共识规律（"需求增长≠便宜"、"预披露≠最终法"、"计划产能≠已交付"……），并经过两次同模型盲评验证——主张正确率 100%、价格锚定有效性是裸模型的 **3.2 倍**、token 成本是裸模型的 **0.9 倍**。它赢的方式不是"信息更多"，是"判断更可验证、认知能累积"。（注：盲评样本小——两个案例、同模型自评，参考价值高于统计意义。）
 
 ## FAQ
 
 - **它能告诉我 XX 会涨吗？** 不能，也不假装能。它会告诉你：这个价格已经相信了什么、要让"涨"成立哪几条事实必须为真、现在哪条已经为假、下一个验证日是几号。你要的不是预测，是这个清单。
 - **要买什么 API / 花多少钱？** 零。模型费用就是你本来在花的 agent 订阅，没有额外支出。
-- **没有 Tushare token 能用吗？** 能。A 股价格锚可换 BAOSTOCK（免 token）；TUSHARE_TOKEN 是可选增强，且只从环境变量读取，永不写入文件。
+- **没有 Tushare token 能用吗？** 能。A 股价格锚可换 BAOSTOCK（免 token）。想用 Tushare：DSH 里跑一次 `/resanity-tushare set <你的token>`（存 `~/.dsh/resanity/credentials.json`，仅脚本读取，不进日志和仓库）；其他环境设 `TUSHARE_TOKEN` 环境变量或 `RESANITY_CREDENTIALS` 指向凭据文件。token 永远是可选增强。
 - **数据存在哪？** 全部明文在你的机器上（`anchors/`、`journal/`）——换平台直接带走，没有任何厂商锁定。
 - **它是投资顾问吗？** 不是，也不打算是。它是你的研究员 + 账本 + 泼冷水专员。
 

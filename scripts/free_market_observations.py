@@ -3,7 +3,7 @@
 
 This adapter deliberately does not scan the full market, choose a fallback, or
 admit evidence.  The caller selects exactly one provider for a bounded request.
-The output is compatible with ``market_snapshot_adapter.py`` and carries a
+The output is compatible with the report audit flow and carries a
 content-addressed acquisition receipt.
 """
 from __future__ import annotations
@@ -25,8 +25,8 @@ from contextlib import redirect_stderr, redirect_stdout
 from urllib.parse import urlparse
 
 
-SCHEMA_VERSION = "trade-nothing.free-market-observations.v1"
-RECEIPT_SCHEMA = "trade-nothing.free-market-acquisition-receipt.v1"
+SCHEMA_VERSION = "resanity.free-market-observations.v1"
+RECEIPT_SCHEMA = "resanity.free-market-acquisition-receipt.v1"
 SUPPORTED_PROVIDERS = frozenset({"TUSHARE", "BAOSTOCK", "AKSHARE_TENCENT", "CSV"})
 SUPPORTED_EXCHANGES = frozenset({"XSHG", "XSHE"})
 SUPPORTED_ASSET_TYPES = frozenset({"EQUITY", "INDEX"})
@@ -429,6 +429,37 @@ def _collect_akshare_tencent(request, cutoff, start):
     return series, {"provider_version": _package_version("akshare", ak)}
 
 
+def _credential_paths():
+    """凭据文件候选路径：RESANITY_CREDENTIALS 优先，其次 DSH 家目录，再 XDG 配置。"""
+    paths = []
+    env_path = _text(os.environ.get("RESANITY_CREDENTIALS"))
+    if env_path:
+        paths.append(Path(env_path).expanduser())
+    dsh_home = _text(os.environ.get("DSH_HOME")) or str(Path.home() / ".dsh")
+    paths.append(Path(dsh_home) / "resanity" / "credentials.json")
+    paths.append(Path.home() / ".config" / "resanity" / "credentials.json")
+    return paths
+
+
+def resolve_tushare_token():
+    """TUSHARE_TOKEN 环境变量优先；否则读凭据文件（由 DSH 的 /resanity-tushare 命令维护）。
+
+    token 值只在本函数内部流动，绝不写入输出、报告或仓库文件。
+    """
+    token = _text(os.environ.get("TUSHARE_TOKEN"))
+    if token:
+        return token
+    for path in _credential_paths():
+        try:
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        token = _text(data.get("tushareToken")) if isinstance(data, dict) else ""
+        if token:
+            return token
+    return ""
+
+
 def _tushare_query(pro, api_name, **kwargs):
     try:
         frame = pro.query(api_name, **kwargs)
@@ -447,7 +478,7 @@ def _tushare_query(pro, api_name, **kwargs):
 
 
 def _collect_tushare(request, cutoff, start):
-    token = _text(os.environ.get("TUSHARE_TOKEN"))
+    token = resolve_tushare_token()
     if not token:
         raise AcquisitionError("CREDENTIAL_MISSING", "tushare_token_missing")
     ts = _optional_import("tushare")

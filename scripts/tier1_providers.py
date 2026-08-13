@@ -23,7 +23,7 @@ try:
 except Exception:
     def clean_proxy_env(): pass
 
-UA = "reSanity/1.0.0 research (+https://github.com/Thhoho/trade-nothing)"
+UA = "reSanity/1.0.0 research (+https://github.com/Thhoho/reSanity)"
 
 
 def _get(url, headers=None, timeout=12):
@@ -112,7 +112,7 @@ def comtrade_export(reporter_code, partner_code, hs_code, period):
 
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser(description="Trade Nothing Tier-1 structured data providers")
+    ap = argparse.ArgumentParser(description="reSanity Tier-1 structured data providers")
     ap.add_argument("--fred", help="FRED series id, e.g. DGS10")
     ap.add_argument("--edgar", help="US ticker, e.g. NVDA"); ap.add_argument("--form", default="")
     ap.add_argument("--comtrade", nargs=4, metavar=("REPORTER", "PARTNER", "HS", "PERIOD"))

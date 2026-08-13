@@ -6,19 +6,24 @@ next trigger, and sends a macOS notification when a trigger is due or within
 WINDOW days. Event-based triggers without a date (e.g. "朱雀三号发射窗口")
 are skipped by design — they surface in the weekly review instead.
 
+Anchor store location: `--anchors PATH` wins, then the `RESANITY_ANCHORS`
+environment variable, then `<cwd>/anchors` (the workspace store — never the
+skill install directory, which may only ship templates). Files named
+`README.md`, `index.md`, `example.md`, or starting with `_` are skipped.
+
 Exit 0 always (a check with nothing due is success, not failure).
 """
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
 from datetime import date, timedelta
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-ANCHORS = ROOT / "anchors"
+SKIP_NAMES = {"README.md", "index.md", "example.md"}
 
 DATE_PATTERNS = [
     re.compile(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})"),
@@ -62,7 +67,18 @@ def next_trigger(anchor_file: Path, today: date) -> tuple[str, date] | None:
     return anchor_file.stem, min(dates)
 
 
+def anchor_dir(args: argparse.Namespace) -> Path:
+    if args.anchors:
+        return Path(args.anchors).expanduser()
+    env = os.environ.get("RESANITY_ANCHORS")
+    if env:
+        return Path(env).expanduser()
+    return Path.cwd() / "anchors"
+
+
 def notify(message: str) -> None:
+    if sys.platform != "darwin":
+        return  # 非 macOS：只打印，不弹通知
     script = f'display notification "{message}" with title "⚓ 锚体检"'
     subprocess.run(["osascript", "-e", script], check=False)
 
@@ -70,13 +86,15 @@ def notify(message: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--window", type=int, default=3, help="days before trigger to start reminding")
+    parser.add_argument("--anchors", help="anchor store directory (default: $RESANITY_ANCHORS or <cwd>/anchors)")
     parser.add_argument("--no-notify", action="store_true", help="print only, no notification")
     args = parser.parse_args()
 
+    anchors = anchor_dir(args)
     today = date.today()
     due, near = [], []
-    for anchor_file in sorted(ANCHORS.glob("*.md")):
-        if anchor_file.name in {"README.md", "index.md"}:
+    for anchor_file in sorted(anchors.glob("*.md")) if anchors.is_dir() else []:
+        if anchor_file.name in SKIP_NAMES or anchor_file.name.startswith("_"):
             continue
         hit = next_trigger(anchor_file, today)
         if not hit:

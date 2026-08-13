@@ -1,8 +1,7 @@
 ---
 name: resanity
-description: >
-  散户研究心法：把模糊问题变锋利、枚举可能性、只对承重主张取真实证据、做非对称审计，
-  交付证据标注的可读报告，并沉淀可更新的认知锚。默认原生工具循环，零强制脚本。
+description: 散户研究心法：把模糊问题变锋利、枚举可能性、只对承重主张取真实证据、做非对称审计，交付证据标注的可读报告，并沉淀可更新的认知锚。何时用：用户问题材真伪、要可能性地图/承重主张审计/定价对照、说「更新锚」时。默认原生工具循环，零强制脚本。
+whenToUse: 用户请求验证题材真伪、拆解个股或行业研究、说「更新锚」、要求可能性地图/证据审计/定价对照/载体比较时。
 ---
 
 # reSanity 散修 — 一页心法
@@ -44,7 +43,8 @@ description: >
 - 多角度检索，不拿一个公司名查到底：因果、瓶颈、替代、客户、供应商、监管、融资、估值、证伪各查一遍。检索到 ≠ 读到，读到 ≠ 有边际。
 - **发现驱动的重定向**：允许 2–3 次"新线索 → 更新假设 → 再搜"循环（探索不只验证）；每次重定向必须说明它可能改变哪条承重主张或认知锚，否则不做。
 - 可选硬锚（无 key，实测可用）：`python3 scripts/tier1_providers.py`（FRED / EDGAR / Comtrade）。
-- 可选 A 股行情硬锚（价格锚用，脚本已随包安装）：`python3 scripts/free_market_observations.py --input req.json --output obs.json`；req 含 `provider`（TUSHARE / BAOSTOCK / AKSHARE_TENCENT）、`as_of_date`、`lookback_calendar_days`、`candidate{exchange,symbol}`、可选 `benchmark`。TUSHARE 需环境变量 `TUSHARE_TOKEN`，无 token 用 BAOSTOCK 或 AKSHARE_TENCENT。价格数字只引用输出包（带获取收据）；token 永不进入 prompt、报告、锚库或仓库文件。
+- 可选 A 股行情硬锚（价格锚用，脚本已随包安装）：`python3 scripts/free_market_observations.py --input req.json --output obs.json`；req 含 `provider`（TUSHARE / BAOSTOCK / AKSHARE_TENCENT）、`as_of_date`、`lookback_calendar_days`、`candidate{exchange,symbol}`、可选 `benchmark`。TUSHARE 的 token 由脚本自行读取（环境变量 `TUSHARE_TOKEN` → 凭据文件，DSH 下由用户运行 `/resanity-tushare set <token>` 维护，其他宿主用 `RESANITY_CREDENTIALS` 指路径）；无 token 用 BAOSTOCK 或 AKSHARE_TENCENT。价格数字只引用输出包（带获取收据）；token 永不进入 prompt、报告、锚库或仓库文件，模型也不要主动读取凭据文件。
+- 路径约定：`scripts/` 等随包资源以本 skill 的安装目录为基底解析（主机注入的 skill 资源指引会给出该目录）；`anchors/`、`journal/` 等数据目录恒以会话工作目录（cwd）为基底——两者不同根，不要混写。
 - 反例诚实：自己提的反例就叫 self-countercase；没有真正独立的第二上下文，就不写"独立质证"。
 
 ### 3. 非对称审计（对每个候选载体）
@@ -75,7 +75,8 @@ description: >
 - 你不是自己的独立质疑者。
 
 ## 认知锚的持久化（文件约定，非工具）
-- 研究开始前：若 `anchors/` 下有相关主题的文件，先读它（及 `anchors/index.md`），把仍有效的锚带入本次研究。
+- 根目录约定：`anchors/` 与 `journal/` 是数据仓库，根 = 会话工作目录（cwd），不是本 skill 的安装目录；`scripts/` 等随包资源才以 skill 安装目录为基底。
+- 研究开始前：若工作目录的 `anchors/` 下有相关主题的文件，先读它（及 `anchors/index.md`），把仍有效的锚带入本次研究。
 - 研究结束后：把新/更新的锚写入 `anchors/<主题>.md`（锚命题 + 证据等级 + 更新触发器 + **检验履历** + **锚定领先度** + 日期）。每主题活跃锚 ≤5 条；被证据推翻的锚标 `[失效]` 并注明推翻它的事实，不删除。
 - **信念 = 被攻击后仍站着的判断**：每次触发器检验后，在「检验履历」记一行（事件 → 通过/推翻）；连续通过的锚升档——证据的累积确证，不是信心的自我催眠。
 - **远见 = 锚定领先度**：每条锚记录"锚定时市场共识是什么"；复盘时数自己比共识早看懂了几次。
