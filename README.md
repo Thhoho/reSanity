@@ -1,5 +1,7 @@
 # reSanity 散修
 
+<p align="center"><img src="assets/logo.svg" width="96" alt="散修：锚 + 对勾"/></p>
+
 > 散修，修出你的 Sanity。
 
 **一个给散户用的认知管理工具：帮你查证、帮你避坑、帮你记住、帮你复盘。**
