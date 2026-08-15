@@ -2,9 +2,9 @@
 """Deterministic anchor-trigger check — no LLM, no network, no writes.
 
 Parses the `更新触发器` lines of anchors/*.md for dates, finds each theme's
-next trigger, and sends a macOS notification when a trigger is due or within
-WINDOW days. Event-based triggers without a date (e.g. "朱雀三号发射窗口")
-are skipped by design — they surface in the weekly review instead.
+earliest unresolved trigger, and sends a macOS notification when it is overdue,
+due, or within WINDOW days. Event-based triggers without a date (e.g.
+"朱雀三号发射窗口") are skipped by design — they surface in the weekly review.
 
 Anchor store location: `--anchors PATH` wins, then the `RESANITY_ANCHORS`
 environment variable, then `<cwd>/anchors` (the workspace store — never the
@@ -20,7 +20,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 SKIP_NAMES = {"README.md", "index.md", "example.md"}
@@ -28,7 +28,7 @@ SKIP_NAMES = {"README.md", "index.md", "example.md"}
 DATE_PATTERNS = [
     re.compile(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})"),
     re.compile(r"(20\d{2})年(\d{1,2})月(\d{1,2})日"),
-    re.compile(r"(?<![0-9])(\d{1,2})/(\d{1,2})(?![0-9/])"),
+    re.compile(r"(?<![0-9/])(\d{1,2})/(\d{1,2})(?![0-9/])"),
 ]
 
 
@@ -38,16 +38,17 @@ def parse_dates(text: str, today: date) -> list[date]:
         for match in pattern.finditer(text):
             if pattern is DATE_PATTERNS[2]:
                 month, day = int(match.group(1)), int(match.group(2))
-                year = today.year if (month, day) >= (today.month, today.day) else today.year + 1
+                # Bare M/D is a one-off trigger in the current research year.
+                # If it has passed, keep it overdue until the anchor is updated.
+                year = today.year
             else:
                 year, month, day = (int(g) for g in match.groups())
             try:
                 parsed = date(year, month, day)
             except ValueError:
                 continue
-            if parsed >= today:
-                found.append(parsed)
-    return found
+            found.append(parsed)
+    return list(dict.fromkeys(found))
 
 
 def next_trigger(anchor_file: Path, today: date) -> tuple[str, date] | None:

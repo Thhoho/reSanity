@@ -1,0 +1,4 @@
+**/__pycache__/
+**/*.py[cod]
+validation/dsh-pilot/__pycache__/**
+validation/dsh-pilot/**/*.pyc

@@ -10,16 +10,25 @@
     },
     "./package.json": "./package.json"
   },
+  "scripts": {
+    "test": "node test/plugin.test.mjs && python3 -m unittest discover -s test -p 'test_*.py'",
+    "check:report": "python3 tools/research_check.py"
+  },
   "files": [
     "lib/index.js",
     "SKILL.md",
+    "ARCHITECTURE.md",
     "README.md",
     "EXAMPLES.md",
     "LICENSE",
     "scripts/",
-    "tools/",
+    "tools/anchor_check.py",
+    "tools/research_check.py",
     "anchors/",
     "journal/",
+    "validation/README.md",
+    "validation/host-receipt-template.json",
+    "validation/receipt-template.json",
     "assets/"
   ],
   "license": "MIT",

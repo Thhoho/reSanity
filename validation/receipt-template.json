@@ -1,0 +1,61 @@
+{
+  "schema_version": "resanity.audit-receipt.v1",
+  "method": {
+    "skill_sha256": "<64-hex sha256 of the exact frozen SKILL.md>"
+  },
+  "report": {
+    "path": "report.md",
+    "sha256": "<64-hex sha256 of report.md>",
+    "as_of": "2026-08-14"
+  },
+  "runtime": {
+    "host": "codex",
+    "model": "<exact model identifier>"
+  },
+  "budget": {
+    "tool_calls": {
+      "limit": 30
+    },
+    "web_search": {
+      "limit": 15
+    },
+    "tokens_total": {
+      "limit": 150000
+    },
+    "wall_seconds": {
+      "limit": 900
+    }
+  },
+  "artifacts": {
+    "prompt": {
+      "path": "prompt.md",
+      "sha256": "<64-hex sha256 of prompt.md>"
+    },
+    "host_receipt": {
+      "path": "host-receipt.json",
+      "sha256": "<64-hex sha256 of the raw host receipt>"
+    }
+  },
+  "sources": [
+    {
+      "source_id": "E1",
+      "locator": "https://example.com/primary-source",
+      "publisher": "<publisher>",
+      "published_at": "2026-08-13",
+      "retrieved_at": "2026-08-14",
+      "lineage_key": "<upstream-origin:stable-id>",
+      "kind": "PRIMARY",
+      "snapshot_path": "sources/E1.txt",
+      "snapshot_sha256": "<64-hex sha256 of sources/E1.txt>"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C1",
+      "boundary": "FACT",
+      "source_ids": [
+        "E1"
+      ]
+    }
+  ]
+}

@@ -37,7 +37,7 @@
 
 ## 装起来（30 秒）
 
-1. 下载/克隆本仓库（其实只需要四个东西：`SKILL.md`、`anchors/`、`scripts/`，可选 `tools/` 用于定时提醒；最省事是把整个仓库目录软链接过去）
+1. 下载/克隆本仓库（日常问答只需要 `SKILL.md`；锚、价格数据和正式报告校验分别使用 `anchors/`、`scripts/`、`tools/`。最省事是把整个仓库目录软链接过去）
 2. 放进你用的 agent 的 skills 目录：
 
 | 环境 | 放哪里 |
@@ -49,7 +49,7 @@
 | OpenClaw | workspace 的 skills 目录（ClawHub 支持从 Claude 格式一键导入） |
 | Hermes | skills 目录（开放 Agent Skills 标准，互通） |
 
-3. 完事。**没有任何必须安装的依赖**——热路径就是一份说明书 + 你模型自带的搜索能力。可选的 A 股价格锚脚本才需要 Python（详见 FAQ）。
+3. 完事。**没有第三方运行依赖**——研究热路径仍是一份说明书 + 模型自带工具；价格锚、提醒和正式报告校验只用 Python 标准库或对应宿主已有依赖。
 
 ## 怎么用
 
@@ -65,6 +65,18 @@
 
 > DeepSeek Harness 用户：会话里输入 `/resanity` 会确定性加载全文；也可以直接问问题，模型按描述自动调用。锚库和决策日志落在**会话工作目录**（`anchors/`、`journal/`），不落在 skill 安装目录——换项目换锚库，换平台可整体带走。
 
+### 正式报告：模型写，薄壳只验机械边界
+
+模型仍然独自决定根结论、路径、证据标签和下一步。保存完整报告或做 A/B 验证时，模型只在极小的审计收据里填写主张/来源索引和预算上限；token、工具调用与耗时由宿主在运行结束后生成 `resanity.host-receipt.v1`，模型不得自报。然后运行：
+
+```sh
+python3 tools/research_check.py path/to/report.receipt.json
+# 正式验证要求来源快照和完整成本计量：
+python3 tools/research_check.py path/to/report.receipt.json --strict
+```
+
+它只检查报告/SKILL/来源快照 hash、as-of、`[C#] → [E#]` 引用、上游来源血缘和预算；strict 模式再解析规范化宿主收据、交叉核对运行计量并绑定原始会话 hash。没有宿主收据却填写运行数字会直接失败。它**不会理解或改写结论，也不会自动重跑**。通过只叫 `AUDIT_RECEIPT_OK`，不等于研究正确。完整边界见 [ARCHITECTURE.md](ARCHITECTURE.md)，当前版本验证协议见 [validation/README.md](validation/README.md)。
+
 ## DeepSeek Harness 插件部署（可选，推荐）
 
 本仓库同时是一个 dsh 插件包（`lib/index.js`），在"文件目录安装"之上再给四样东西：
@@ -72,7 +84,7 @@
 1. **内置 skill 分发**：插件把 `SKILL.md` 注册进 DSH 的 skill 注册表（rank 600，本地/项目副本可同名覆盖），其他 DSH 用户装上插件即得 skill；
 2. **锚体检定时提醒**：用 DSH 的 `ctx.timer` 每 6 小时扫一遍所有活跃会话工作区的 `anchors/`，到期/临近（默认 3 天窗口）弹系统通知——**不再需要 LaunchAgent/cron 挂 `tools/anchor_check.py`**；
 3. **`/resanity-check` 命令**：随时在会话里手动体检，等价于 `python3 tools/anchor_check.py --no-notify`，输出直接显示在命令面板；
-4. **`/resanity-tushare` 命令**：`set <token> | status | clear | test` 管理 Tushare token（价格锚用）。token 存 `~/.dsh/resanity/credentials.json`（600 权限），脚本自动回退读取，不用再 export 环境变量；该命令 `recordInput: false`，token 绝不进命令日志。
+4. **`/resanity-tushare` 命令**：`set <token> | status | clear | test` 管理 Tushare token（价格锚用）。token 存 `~/.dsh/resanity/credentials.json`（600 权限），脚本自动回退读取，不用再 export 环境变量；该命令 `recordInput: false`，token 绝不进命令日志。`set` 不限制 token 长度/格式（仅去掉粘贴混入的不可见零宽字符），保存后自动在线校验并回显结果；`test` 可随时重新校验。
 
 安装（以 web profile 为例）：
 
@@ -97,7 +109,7 @@ ln -s "$(pwd)" ~/.dsh/profiles/node_modules/resanity
 #    启动约 30 秒后插件跑第一次锚体检（有到期/临近锚会弹系统通知）。
 ```
 
-体检范围优先级：`$RESANITY_ANCHORS`（可用 `:` 分隔多目录）→ 配置 `anchorsDirs` → 所有活跃会话的 `<工作区>/anchors`。到期的锚会提醒"说「更新锚」即可"——检查是通知，更新永远是你的一句话。
+体检范围优先级：`$RESANITY_ANCHORS`（可用 `:` 分隔多目录）→ 配置 `anchorsDirs` → 所有活跃会话的 `<工作区>/anchors`。到期的锚会提醒"说「更新锚」即可"；错过日期后会持续保持 overdue，直到锚被更新，不会静默滚到下一年。
 
 ### 然后：养你的锚
 
@@ -134,9 +146,11 @@ ln -s "$(pwd)" ~/.dsh/profiles/node_modules/resanity
 - 认知锚需要你说一句"更新锚"才会更新——提醒会到，检查是你的一句话
 - 它把"感觉"变成"可验证的判断"，**判断之后的行为永远是你自己的**
 
-## 为什么有效（不玄学，有数据）
+## 目前验证到哪一步
 
-这套纪律不是拍脑袋：陷阱清单来自六个冻结投资案例的错误共识规律（"需求增长≠便宜"、"预披露≠最终法"、"计划产能≠已交付"……），并经过两次同模型盲评验证——主张正确率 100%、价格锚定有效性是裸模型的 **3.2 倍**、token 成本是裸模型的 **0.9 倍**。它赢的方式不是"信息更多"，是"判断更可验证、认知能累积"。（注：盲评样本小——两个案例、同模型自评，参考价值高于统计意义。）
+前代薄宪法做过两组初步对照：六个冻结案例中主张正确率 100%、有效定价锚为强基线的 **3.2 倍**、token 约 1.02x；一个真实检索案例中身份遮蔽评分 29/30 vs 26/30、记录 token 约 0.91x。它们支持“轻量方向值得继续”，但不证明当前精确版本：样本小、评估者仍是模型、真实检索只有一题，且此后 `SKILL.md` 已继续修改。
+
+因此本仓库当前状态明确为 **`UNBENCHMARKED_CURRENT`**。这些数字是历史先验，不是当前版本证书，更不是 Alpha、收益或 PMF。改动时先跑 4 题快速门禁；候选冻结后跑 [21 会话完整 T 回归](validation/dsh-full/README.md)，最后再按 [当前版本验证协议](validation/README.md) 保存强基线配对原始产物并做人类身份遮蔽评估。
 
 ## FAQ
 
@@ -148,7 +162,7 @@ ln -s "$(pwd)" ~/.dsh/profiles/node_modules/resanity
 
 ## 开发
 
-- 集成测试：`test/plugin.test.mjs`（真实 Cordis 上下文 + mock 服务，覆盖 provider/命令/定时器/凭据全路径）。本地跑前先把 DSH 的依赖链进仓库：`ln -s <dsh 安装目录>/node_modules node_modules`，然后 `node test/plugin.test.mjs`；
+- 完整测试：`npm test`。它覆盖真实 Cordis 上下文、插件命令/定时器/凭据、锚逾期语义和报告收据的失败关闭；本地跑前先把 DSH 的依赖链进仓库：`ln -s <dsh 安装目录>/node_modules node_modules`；
 - 改 `SKILL.md` 即时生效（DSH 每个 step 重新快照目录与正文）；改 `lib/index.js` 插件逻辑需重启 dsh；
 - 凭据文件、锚库、决策日志都在 `~/.dsh` 或工作区，`git status` 应始终干净。
 
