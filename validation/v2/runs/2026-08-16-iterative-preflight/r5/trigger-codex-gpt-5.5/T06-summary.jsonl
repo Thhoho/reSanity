@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a006aa-9e17-7f51-a133-6c6a4a3bb129"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"可以。请把会议记录内容发过来，我会压缩成三点，尽量保留决策、行动项和关键分歧。"}}
+{"type":"turn.completed","usage":{"input_tokens":11412,"cached_input_tokens":8576,"output_tokens":52,"reasoning_output_tokens":13}}

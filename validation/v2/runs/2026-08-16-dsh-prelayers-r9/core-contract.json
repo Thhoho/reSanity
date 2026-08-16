@@ -1,0 +1,12 @@
+{
+  "schema_version": "resanity.manual-layer-review.v1",
+  "layer": "core_contract",
+  "status": "PASS",
+  "reviewed_cases": [
+    {"id": "C01-product-claim", "report_sha256": "824af1dd6ad1271c0465a263c12ea28fb6515887da8f3c3c83021c1c1e6571ae"},
+    {"id": "C02-policy-execution", "report_sha256": "db174e36b4bdb0c32d41c81ba6da6aee05d70fc8d1acc99f280f49a20e0b4f8b"},
+    {"id": "C03-technical-debug", "report_sha256": "583c86a72b3ec78a1955a1243cbc47ed4d04e62d25eeea44022bd1a115d409a9"}
+  ],
+  "judgment": "All three closed non-investing cases separate observations, allowed inferences, prohibited inferences, decision impact, and one next validation without importing investing language.",
+  "method_status": "UNBENCHMARKED_CURRENT"
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Resanity"
+  short_description: "审计研究中的承重主张、证据边界、决策影响与可更新认知锚"
+  default_prompt: "Use $resanity to audit the load-bearing claims and evidence boundaries in this research question."
+policy:
+  allow_implicit_invocation: true

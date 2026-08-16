@@ -1,0 +1,29 @@
+{
+  "schema_version": "resanity.manual-layer-review.v1",
+  "layer": "open_network",
+  "status": "FAIL",
+  "reviewed_cases": [
+    {"id": "O01-product-passkey", "report_sha256": "abbdc90219f295b96ba2f671a03fa2e1b6b2da90430d0664cdebe875632f7832", "host_complete": true, "tool_calls": 28, "limit": 30, "source_files": 10},
+    {"id": "O02-policy-outcome", "report_sha256": "c51286b554d677426b383de25b7f7ef5707d29fa3b3fc87724e09c80ca05cacf", "host_complete": false, "tool_calls": 32, "limit": 30, "source_files": 23},
+    {"id": "O03-investing-exposure", "report_sha256": "d2ca08b2d4bac8742d850f0d522dc241c8f78f88d2b90c28737692a677cf903a", "host_complete": false, "tool_calls": 41, "limit": 30, "source_files": 41}
+  ],
+  "blocking_findings": [
+    {
+      "severity": "BUDGET_CONTRACT",
+      "finding": "O02 and O03 exceeded the frozen 30-call ceiling. The reports and source snapshots are preserved and neither case was retried, but the layer fails the frozen host contract."
+    },
+    {
+      "severity": "SOURCE_CONTRACT",
+      "finding": "O01 uses secondary reporting for a load-bearing Windows platform-coverage claim although the case requires first-party product documentation and original adoption data. O03 relies on multiple secondary market and transcript sources for decision-bearing valuation and attribution claims although the case calls for SEC, IR, customer or exchange originals and reproducible market data."
+    },
+    {
+      "severity": "SEMANTIC_LINEAGE",
+      "finding": "O03 connects aggregate company backlog, revenue, operating profit and cash flow into a company-level order-to-cash chain without proving that the same order cohort or the liquid-cooling product line carries that lineage. Its later NOT_EVALUABLE boundary for liquid-cooling P&L is correct, but the earlier aggregate chain remains stronger than the evidence."
+    },
+    {
+      "severity": "SNAPSHOT_DISCIPLINE",
+      "finding": "O03 stores 41 source files, including many duplicate text transforms and secondary pages, instead of one canonical snapshot per upstream source with marked derivatives only where necessary."
+    }
+  ],
+  "method_status": "UNBENCHMARKED_CURRENT"
+}

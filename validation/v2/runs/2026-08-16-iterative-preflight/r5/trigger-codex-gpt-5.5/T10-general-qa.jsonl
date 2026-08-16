@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a006ab-19f4-7103-b362-91b1a85353b2"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"TCP 三次握手用于在客户端和服务器之间建立可靠连接，并同步双方的初始序列号。\n\n1. 客户端发送 `SYN`\n客户端告诉服务器：“我想建立连接”，并带上自己的初始序列号，比如 `seq = x`。\n\n2. 服务器回复 `SYN + ACK`\n服务器表示同意连接，同时确认收到了客户端的 `SYN`：\n`ack = x + 1`\n并带上服务器自己的初始序列号，比如 `seq = y`。\n\n3. 客户端发送 `ACK`\n客户端确认收到了服务器的 `SYN`：\n`ack = y + 1`\n\n完成后，双方都确认了两件事：\n\n- 对方能收到自己的数据\n- 自己也能收到对方的数据\n\n所以连接进入 `ESTABLISHED` 状态，可以开始传输数据。\n\n简化成一句话：\n\n`SYN -> SYN/ACK -> ACK`，双方通过这三步确认彼此的收发能力，并同步初始序列号。"}}
+{"type":"turn.completed","usage":{"input_tokens":11410,"cached_input_tokens":10624,"output_tokens":225,"reasoning_output_tokens":0}}

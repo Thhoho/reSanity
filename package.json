@@ -1,33 +1,51 @@
 {
   "name": "resanity",
-  "description": "reSanity 散修：散户研究心法 skill + DeepSeek Harness 插件（skill provider、锚体检定时提醒、/resanity-check 命令）",
-  "version": "1.0.0",
+  "description": "Resanity v2：原子主张证据研究 Skill 与可选 DeepSeek Harness 机械外壳",
+  "version": "2.0.0-rc.1",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": {
       "default": "./lib/index.js"
     },
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "scripts": {
-    "test": "node test/plugin.test.mjs && python3 -m unittest discover -s test -p 'test_*.py'",
-    "check:report": "python3 tools/research_check.py"
+    "test": "node test/plugin.test.mjs && node test/dsh-budget-guard.test.mjs && python3 -m unittest discover -s test -p 'test_*.py'",
+    "check:report": "python3 tools/research_check.py",
+    "check:identity": "python3 tools/skill_identity.py --host generic --profile core",
+    "check:validation-source": "python3 tools/validation_source_check.py",
+    "validate:v2": "python3 validation/v2/run_validation.py",
+    "validate:v2:ab": "python3 validation/v2/run_final_ab.py",
+    "validate:v2:ab:dsh": "python3 validation/v2/run_final_ab_dsh.py",
+    "validate:v2:prelayers:dsh": "python3 validation/v2/run_dsh_prelayers.py",
+    "validate:v2:bridge:dsh": "bash validation/v2/run-targeted-bridge-dsh.sh"
   },
   "files": [
     "lib/index.js",
+    "cordis.patch.yml",
     "SKILL.md",
+    "agents/",
+    "references/",
     "ARCHITECTURE.md",
     "README.md",
     "EXAMPLES.md",
     "LICENSE",
-    "scripts/",
+    "scripts/free_market_observations.py",
+    "scripts/tier1_providers.py",
     "tools/anchor_check.py",
+    "tools/skill_identity.py",
     "tools/research_check.py",
     "anchors/",
     "journal/",
-    "validation/README.md",
     "validation/host-receipt-template.json",
+    "validation/README.md",
     "validation/receipt-template.json",
     "assets/"
   ],
@@ -36,5 +54,16 @@
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-skill": "^0.1.0-rc.6",
     "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-skill": {
+      "optional": true
+    },
+    "@deepseek-ai/schemastery": {
+      "optional": true
+    }
   }
 }

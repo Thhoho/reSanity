@@ -1,0 +1,15 @@
+{
+  "schema_version": "resanity.manual-layer-review.v1",
+  "layer": "install_identity",
+  "status": "PASS",
+  "active_locator": "file:///private/tmp/resanity-v2-dsh-prelayers.swWtuP/home/profiles/headless-resanity/node_modules/resanity/SKILL.md",
+  "skill_sha256": "a40d87daade14f5b1462ccc9a6ec217a68168b09dcf41dffd60da6d5b625f4d4",
+  "profile_sha256": {
+    "core": "3d959b0e4ae3ab8c18d204c45e4343ea0cb64ad7dbdf2e2d39703bdf97910dd1",
+    "investing": "688b92807be4cb07ac559ad9e0f87bac790394323fac5aece6b4ed02d19dd9f4",
+    "anchors": "4bdef2170a510133d152ec366dd2de5a9570fa7ab082bae2598b8728b040fb04",
+    "formal-audit": "6c1958ce93ad4c241d6817c727563ed1b5f1b3b2e78ea3649250c1a575ed3e80"
+  },
+  "profile_pair": "PASS: baseline and candidate normalized config hashes match; candidate adds only the Resanity treatment bundle and dependency",
+  "method_status": "UNBENCHMARKED_CURRENT"
+}

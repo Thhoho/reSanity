@@ -1,0 +1,2 @@
+# Raw validation captures are preserved byte-for-byte, including model-emitted Markdown spacing.
+validation/v2/runs/2026-08-16-iterative-preflight/** whitespace=-trailing-space,-space-before-tab

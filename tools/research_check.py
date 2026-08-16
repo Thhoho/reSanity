@@ -2,8 +2,9 @@
 """Validate a reSanity report receipt without judging research semantics.
 
 The Markdown report remains the only semantic artifact. This checker only
-verifies mechanical boundaries: frozen hashes, as-of dates, claim/source
-references, declared source lineage, and explicit tool budgets. It never
+verifies mechanical boundaries: canonical/active/profile identity, frozen
+hashes, as-of dates, claim/source references, declared source lineage, and
+explicit tool budgets. It never
 rewrites a report, changes an evidence label, retries research, or decides a
 conclusion.
 """
@@ -18,7 +19,13 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "resanity.audit-receipt.v1"
+try:
+    from tools.skill_identity import IdentityError, file_locator, profile_identity
+except ModuleNotFoundError:  # direct `python3 tools/research_check.py`
+    from skill_identity import IdentityError, file_locator, profile_identity
+
+
+SCHEMA_VERSION = "resanity.audit-receipt.v2"
 HOST_RECEIPT_SCHEMA_VERSION = "resanity.host-receipt.v1"
 BOUNDARIES = {
     "FACT",
@@ -152,11 +159,105 @@ def _load_host_receipt(path: Path, errors: list[str]) -> dict[str, Any] | None:
     return host_receipt
 
 
+def _validate_method_identity(
+    method: Any,
+    *,
+    skill_path: Path,
+    active_skill_path: Path,
+    errors: list[str],
+) -> None:
+    """Bind the canonical Skill, actual loaded Skill, and selected profile."""
+    if not isinstance(method, dict):
+        errors.append("receipt.method_missing")
+        return
+
+    expected_canonical_sha = _text(method.get("canonical_skill_sha256"))
+    if not SHA_RE.fullmatch(expected_canonical_sha):
+        errors.append("method.canonical_skill_sha256_invalid")
+    if not skill_path.is_file():
+        errors.append("method.canonical_skill_file_missing")
+    elif (
+        SHA_RE.fullmatch(expected_canonical_sha)
+        and sha256_file(skill_path) != expected_canonical_sha
+    ):
+        errors.append("method.canonical_skill_sha256_mismatch")
+
+    profile = method.get("profile")
+    if not isinstance(profile, dict):
+        profile = {}
+        errors.append("method.profile_missing")
+    profile_name = _text(profile.get("name"))
+    expected_profile_sha = _text(profile.get("sha256"))
+    if not profile_name:
+        errors.append("method.profile_name_missing")
+    if not SHA_RE.fullmatch(expected_profile_sha):
+        errors.append("method.profile_sha256_invalid")
+    if skill_path.is_file() and profile_name:
+        try:
+            actual_profile = profile_identity(skill_path.parent, profile_name)
+        except (IdentityError, OSError):
+            errors.append("method.profile_files_invalid")
+        else:
+            if (
+                SHA_RE.fullmatch(expected_profile_sha)
+                and actual_profile["sha256"] != expected_profile_sha
+            ):
+                errors.append("method.profile_sha256_mismatch")
+
+    active = method.get("active")
+    if not isinstance(active, dict):
+        active = {}
+        errors.append("method.active_missing")
+    expected_locator = _text(active.get("locator"))
+    expected_active_sha = _text(active.get("skill_sha256"))
+    expected_active_profile_sha = _text(active.get("profile_sha256"))
+    if not expected_locator:
+        errors.append("method.active_locator_missing")
+    elif expected_locator != file_locator(active_skill_path):
+        errors.append("method.active_locator_mismatch")
+    if not SHA_RE.fullmatch(expected_active_sha):
+        errors.append("method.active_skill_sha256_invalid")
+    if not active_skill_path.is_file():
+        errors.append("method.active_skill_file_missing")
+    elif (
+        SHA_RE.fullmatch(expected_active_sha)
+        and sha256_file(active_skill_path) != expected_active_sha
+    ):
+        errors.append("method.active_skill_sha256_mismatch")
+    if not SHA_RE.fullmatch(expected_active_profile_sha):
+        errors.append("method.active_profile_sha256_invalid")
+    if active_skill_path.is_file() and profile_name:
+        try:
+            actual_active_profile = profile_identity(active_skill_path.parent, profile_name)
+        except (IdentityError, OSError):
+            errors.append("method.active_profile_files_invalid")
+        else:
+            if (
+                SHA_RE.fullmatch(expected_active_profile_sha)
+                and actual_active_profile["sha256"] != expected_active_profile_sha
+            ):
+                errors.append("method.active_profile_sha256_mismatch")
+
+    if (
+        SHA_RE.fullmatch(expected_canonical_sha)
+        and SHA_RE.fullmatch(expected_active_sha)
+        and expected_canonical_sha != expected_active_sha
+    ):
+        errors.append("method.active_skill_not_canonical")
+    if (
+        SHA_RE.fullmatch(expected_profile_sha)
+        and SHA_RE.fullmatch(expected_active_profile_sha)
+        and expected_profile_sha != expected_active_profile_sha
+    ):
+        errors.append("method.active_profile_not_canonical")
+
+
 def validate_receipt(
     receipt: Any,
     *,
     receipt_path: Path,
     skill_path: Path,
+    active_skill_path: Path | None = None,
     strict: bool = False,
 ) -> tuple[list[str], list[str]]:
     """Return stable error and warning codes for one receipt."""
@@ -167,17 +268,12 @@ def validate_receipt(
     if receipt.get("schema_version") != SCHEMA_VERSION:
         errors.append("receipt.schema_version_invalid")
 
-    method = receipt.get("method")
-    if not isinstance(method, dict):
-        method = {}
-        errors.append("receipt.method_missing")
-    expected_skill_sha = _text(method.get("skill_sha256"))
-    if not SHA_RE.fullmatch(expected_skill_sha):
-        errors.append("method.skill_sha256_invalid")
-    if not skill_path.is_file():
-        errors.append("method.skill_file_missing")
-    elif SHA_RE.fullmatch(expected_skill_sha) and sha256_file(skill_path) != expected_skill_sha:
-        errors.append("method.skill_sha256_mismatch")
+    _validate_method_identity(
+        receipt.get("method"),
+        skill_path=skill_path.resolve(),
+        active_skill_path=(active_skill_path or skill_path).resolve(),
+        errors=errors,
+    )
 
     report = receipt.get("report")
     if not isinstance(report, dict):
@@ -466,8 +562,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Validate a reSanity audit receipt without judging its conclusion."
     )
-    parser.add_argument("receipt", help="path to a resanity.audit-receipt.v1 JSON file")
+    parser.add_argument("receipt", help="path to a resanity.audit-receipt.v2 JSON file")
     parser.add_argument("--skill", default=str(ROOT / "SKILL.md"), help="exact SKILL.md to hash-bind")
+    parser.add_argument(
+        "--active-skill",
+        help="actual SKILL.md locator loaded by the host (defaults to --skill)",
+    )
     parser.add_argument(
         "--strict",
         action="store_true",
@@ -488,6 +588,7 @@ def main(argv: list[str] | None = None) -> int:
             receipt,
             receipt_path=receipt_path,
             skill_path=Path(args.skill),
+            active_skill_path=Path(args.active_skill) if args.active_skill else None,
             strict=args.strict,
         )
         result = {"ok": not errors, "errors": errors, "warnings": warnings}

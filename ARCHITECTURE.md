@@ -1,65 +1,125 @@
-# reSanity 架构边界
+# Resanity v2 架构
 
-> 当前方法状态：`UNBENCHMARKED_CURRENT`。工程检查通过不等于研究效果已经验证。
+> 代码版本：`2.0.0-rc.1`（release candidate）。方法状态：`UNBENCHMARKED_CURRENT`。
+> 工程通过、机械收据闭合、安装身份一致或有限 A/B 达线，都不等于研究效果、Alpha 或 PMF。
 
-## 一句话设计
+## 根原则
 
-**模型拥有全部研究语义；代码只守无法靠语言稳定保证的机械边界。**
+**模型拥有全部研究语义；确定性外壳只守不需要理解结论的机械边界。**
 
 ```text
-问题 + 工具
-    ↓
-模型：定义问题、取证、判断、写报告、留下锚
-    ↓
-report.md（唯一语义真相） + receipt.json（旁路审计索引）
-    ↓
-薄壳：hash / as-of / 引用 / 血缘 / 预算 / 快照检查
-    ↓
-交付；薄壳永不改写语义，也不触发重试
+用户问题
+  ↓
+canonical SKILL.md：原子主张协议 + 条件路由
+  ├─ references/investing.md      投资 profile
+  ├─ references/anchors.md        锚生命周期
+  └─ references/formal-audit.md   正式机械审计
+  ↓
+模型：观察 → 可推出 → 不可推出 → 决策影响
+  ↓
+最小充分回答 / report.md（唯一语义真相）
+  ↓ 可选
+机械外壳：hash / as-of / 引用 / 血缘 / 预算 / 安装身份
 ```
 
-## 模型拥有的东西
+v2 不把投资完整报告、锚持久化或正式收据放进所有请求的热路径。是否加载某个 reference，由本次问题决定。
 
-- 问题如何变锋利、哪些路径值得探索；
-- 哪些事实是承重主张、证据标签是什么；
-- 根结论、定价判断、载体、反例与下一步；
-- 是否存在可持久化的认知锚，以及锚如何更新。
+## 语义所有权
 
-Markdown 报告是唯一语义真相。收据不复制结论正文，也不能成为第二份 DecisionSnapshot。
+| 内容 | 所有者 | 代码是否可改 |
+|---|---|---|
+| 问题定义、假设、可能性地图 | 模型 | 否 |
+| 原子主张卡及证据标签 | 模型 | 否 |
+| 结论、反例、下一验证 | 模型 | 否 |
+| 锚命题与 active/refuted/realized/archived 状态 | 模型与用户 | 否 |
+| 文件 hash、引用是否闭合、发布日期是否越过 as-of | 外壳 | 只读检查 |
+| 声明的来源血缘、预算、宿主计量 | 外壳 | 只读检查 |
+| active locator、canonical/profile hash | 外壳 | 只读检查 |
 
-## 确定性外壳只拥有的东西
+如果一条规则需要理解“结论说得对不对”，它属于模型或验证 rubric，不属于外壳。
 
-`tools/research_check.py` 只检查：
+## canonical Skill 与 profiles
 
-1. 当前 `SKILL.md`、报告和来源快照的 SHA-256 是否匹配；
-2. 来源发布日期是否越过报告 as-of；
-3. `[C#]` 主张与 `[E#]` 来源引用是否闭合；
-4. `FACT` 是否至少声明一手/原始来源，或两个独立上游血缘；
-5. `NO_RESULT` 是否声明检索位置、查询和日期范围；
-6. 实际工具计数是否超过预先声明的预算；
-7. 正式验证时，模型、token、工具次数、耗时和来源快照是否齐全，并与宿主收据一致。
+仓库根目录的 `SKILL.md` 是唯一 canonical Skill。它只包含保守触发边界、原子主张卡协议、证据不变量、reference 路由、输出模块和禁止事项。
 
-模型只声明研究语义索引与预算上限，不填写 token、工具次数或耗时。宿主在模型结束后把自己的原始会话规范化为 `resanity.host-receipt.v1`，其中包含真实计量、各预算维度和原始会话 hash。`--strict` 会解析这份规范化收据，把 audit receipt 中任何计量逐项交叉核对，并验证原始会话文件 hash；没有宿主收据却自报计量会失败。不同宿主只需各自提供无语义的规范化适配器，研究检查器不解析其私有消息正文。
+profiles 是条件加载文件的机械组合，不是第二个 Skill，也不是语义状态：
 
-DSH 适配器是 `validation/dsh-pilot/session-metrics.py --format host-receipt`。宿主收据由 runner 写在模型工作区之外，模型无法在运行中预先生成或覆盖。预算中的墙钟时间由 timeout 执行，其余维度在单次运行归档后失败关闭；失败被保留并标记，不自动重试。
+- `core`：只含 `SKILL.md`；
+- `investing`：core + `references/investing.md`；
+- `anchors`：core + `references/anchors.md`；
+- `formal-audit`：core + `references/formal-audit.md`；
+- 组合 profile：按需合并相应 references。
 
-锚提醒器只负责日期触发。过期日期会一直保持 overdue，直到模型/用户更新锚，不会滚到下一年。
+`tools/skill_identity.py` 对上述有序文件清单做规范化 hash。profile hash 只证明本次加载了哪组方法文件，不评价输出语义。
 
-## 明确禁止回来的东西
+## 触发策略
 
-薄壳不得新增：
+- 投资研究可以隐式触发，因为投资 profile 是已有产品能力。
+- 非投资任务只有在用户明确说 Resanity、可能性地图、承重主张审计或更新锚时才触发。
+- 普通总结、编码、写作、翻译和一般问答不触发。
 
-- 研究状态机、候选晋级状态或语义 transition；
-- 自动评分、自动改结论、自动补证据；
-- 多角色固定编排、Judge 或为了合同通过而重试；
-- 订单、仓位、目标价或任何外部行动；
-- 把 `AUDIT_RECEIPT_OK` 表述成研究正确、用户价值、Alpha 或推荐。
+这些规则依赖 Skill metadata 与宿主选择，不能由仓库代码伪装成确定性分类器。`validation/v2` 冻结正反触发样本，必须在真实宿主中验证。
 
-如果某条新规则不能用“机械上可确定、且不需要理解结论”来解释，它就不属于外壳，应留给模型或留在验证 rubric 中。
+## 安装身份与遮蔽
 
-## 失败语义
+正式验证必须同时冻结：
 
-- `AUDIT_RECEIPT_OK`：机械边界闭合，仅此而已；
-- `AUDIT_RECEIPT_FAILED`：列出稳定错误码，不修改任何文件，不自动重跑；
-- 无收据：可交付普通研究回答，但不能声称经过正式审计；
-- 研究效果：只能由冻结版本的对照验证决定。
+1. 宿主实际返回的 `active_locator`；
+2. canonical `SKILL.md` hash；
+3. active `SKILL.md` hash；
+4. 本次 profile hash；
+5. active 副本的 profile hash。
+
+宿主报告的实际 locator 优先于路径猜测。没有宿主 locator 时，身份工具按显式候选顺序解析：项目副本 > 用户副本 > portable/bundled 副本。DSH bundled provider rank 仍允许本地/项目同名 Skill 遮蔽；Codex 或其他宿主也必须以它们实际返回的 locator 为准。
+
+任何 active/canonical/profile 不一致都失败关闭。它只阻断“正式验证结果可归属于该方法版本”，不阻断用户在清楚边界下阅读普通回答。
+
+## 锚生命周期
+
+锚只有四种语义状态：`active`、`refuted`、`realized`、`archived`。只有 `active` 参与日期提醒。
+
+插件与 `tools/anchor_check.py` 只读取状态和日期、跳过非 active 锚、把错过日期保持为 overdue，并在用户显式启用系统通知时提醒。它们不更新状态、不移动日期、不创建锚、不删历史。默认系统通知关闭。
+
+## 正式审计
+
+`tools/research_check.py` 接受 `resanity.audit-receipt.v2`，并检查：
+
+1. canonical/active Skill 与 profile hash；
+2. 报告、提示、来源快照和宿主收据 hash；
+3. 来源发布日期与报告 as-of；
+4. `[C#]` / `[E#]` 引用闭合；
+5. 声明的上游 lineage、`NO_RESULT` 范围和 `INSUFFICIENT` gap；
+6. 宿主计量与预声明预算。
+
+`AUDIT_RECEIPT_OK` 只表示这些机械字段闭合。检查器不读取主张含义，不生成修复，不运行搜索，也不自动重试。
+
+## 验证分层
+
+v2 使用七层验证，详见 `validation/v2/README.md`：core contract、investing profile、open network、anchor lifecycle、trigger、install identity、same-hash final A/B。
+
+v1 的 `validation/dsh-pilot` 与 `validation/dsh-full` 由冻结提交 `746c21d9…` 保留为历史基线。`tools/validation_source_check.py` 会逐文件与该提交对比；这些文件不能被当成 v2 成绩。
+
+## 发布门槛
+
+发布阻断的大问题：
+
+- 代码理解、生成或改写研究语义；
+- 自动补证据、重试、晋级或外部行动；
+- 非投资普通任务被广泛抢占；
+- active/canonical/profile 身份不一致仍可进入正式评分；
+- refuted/realized/archived 锚仍被当作 active 提醒；
+- v1 结果被表述为 v2 成绩；
+- 工程通过被表述为研究有效、Alpha 或 PMF。
+
+可接受但必须记录的小问题：非关键措辞/排版差异；不影响 identity/hash 的路径展示差异；不改变根结论和行动的 `MAJOR_NON_P0`；未完成真实 A/B，因此状态继续为 `UNBENCHMARKED_CURRENT`。
+
+当前 RC 的冻结候选完成了 8 案例 DSH 最终 A/B 和三角色盲化 AI 合议，数值线达标但不是 clean pass。
+这只支持候选版本管理和定向改进，不解除 `UNBENCHMARKED_CURRENT`，也不等于 stable 发布就绪。
+记录见 [`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)。
+
+## 明确不做
+
+- 研究状态机、候选晋级或语义数据库；
+- 固定多 Agent 编排或自动 Judge；
+- 自动交易、订单、仓位、目标价或回报承诺；
+- 以机械合同通过替代真实用户价值验证。

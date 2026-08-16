@@ -1,171 +1,135 @@
-# reSanity 散修
+# Resanity
 
-<p align="center"><img src="assets/logo.svg" width="96" alt="散修：锚 + 对勾"/></p>
+<p align="center"><img src="assets/logo.svg" width="96" alt="Resanity"/></p>
 
-> 散修，修出你的 Sanity。
-> **积极的信心，谨慎的动作。**
+Resanity 是一个证据研究 Skill：把会改变决策的判断拆成“观察到什么、可以推出什么、不能推出什么、对决策有什么影响”。模型保留全部研究语义；代码只做 hash、引用、as-of、来源血缘、预算和安装身份等机械检查。
 
-**一个给散户用的认知管理工具：帮你查证、帮你避坑、帮你记住、帮你复盘。**
+当前代码版本是 **`2.0.0-rc.1`**，发布通道为 release candidate；当前方法状态仍是
+**`UNBENCHMARKED_CURRENT`**。测试通过或有限 A/B 达线不等于研究有效，不证明 Alpha、收益或 PMF。
 
-不是荐股工具，不是行情软件，不是新闻推送。它不下单、不推荐、不承诺收益——它只在你追高之前泼冷水，在你忘记自己判断的时候提醒你，在你亏钱之后告诉你错在哪一环。
+## v2 有什么变化
 
-## 你为什么需要它
+- 保留一个 canonical `resanity` Skill；
+- `SKILL.md` 只放通用原子主张协议和路由；
+- 投资、认知锚、正式审计分别放在条件加载的 `references/`；
+- 投资研究可自动触发，非投资任务只在用户明确要求 Resanity、可能性地图、承重主张审计或更新锚时触发；
+- 回答按问题选择模块，不强制每次生成完整报告；
+- 锚使用 `active / refuted / realized / archived` 生命周期，代码只读和提醒；
+- 正式验证绑定 active locator、canonical Skill hash 与 profile hash，防止验证 A、实际加载 B。
 
-市场里不缺信息，缺的是**验证过的判断**；不缺聪明人，缺的是**记得住自己为什么错的聪明人**。
+完整边界见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
-- 刷到"某题材要起飞"的热帖，你想知道：这是真的吗，还是又来接我盘的？→ 它会去翻公告原文，把"官方口径"和"市场传闻"分开摆给你看。
-- 上个月研究过的东西，这个月中报出来了，你的判断还成立吗？→ 说一句**"更新锚"**，它只查该查的那几个数，几分钟告诉你升档还是失效。不用重读旧报告。
-- 亏了钱却说不清为什么？→ 它记着你每次信了什么、做了什么，每周花一分钟告诉你：你最常踩的是哪条坑。
+## 使用
 
-## 真实运行示例
+投资研究可以直接提问：
 
-两个从模糊问题到真实结果的完整案例（含旧工具三次失败的对照）见 **[EXAMPLES.md](EXAMPLES.md)**：
-
-- **金刚光伏**："太空光伏 + 算力转型"三合一题材，10 分钟查证出"太空是纯题材映射"，结论是"不做任何动作，等半年报"——一个价值连城的"不买"
-- **A股算力链**：同模型盲评 29/30 vs 裸跑 26/30，还便宜 9%——独有发现"华丰科技官方口径与市场传闻冲突"，动作落点精确到"8/24 中报看三个数"
-
-## 三个用户故事
-
-**小王，上班族，下班刷雪球。**
-"那天金刚光伏涨停，太空光伏加算力转型，评论区都在喊。我就问了散修一句：这题材是真的吗？它的答案是：太空光伏公司官方口径连'送样'都没确认过，算力合同客户匿名、一年实际收入六百多万。我最后什么都没买。后来我才知道，它管这个叫'题材映射 vs 真实敞口'，管那个检查叫'官方口径复核'。"
-
-**阿珍，被套怕了的老股民。**
-"我不需要别人告诉我买什么，我需要有人在我手痒的时候按住我。散修的锚体检会提前三天提醒我：你锚里的验证日到了。到了那天我说'更新锚'，它就把结论改了。最大的变化是：我现在知道自己上一次判断错在哪。"
-
-**老李，亏了十年，想搞明白自己。**
-"我最烦那些复盘工具——流水账记了一堆，还是不知道错哪。散修的决策日志就一行：当时信了什么、做了什么、对不对。三个月下来，我发现自己十次里有七次死在同一条陷阱上。知道这件事本身，比抓两个涨停值钱。"
-
-## 装起来（30 秒）
-
-1. 下载/克隆本仓库（日常问答只需要 `SKILL.md`；锚、价格数据和正式报告校验分别使用 `anchors/`、`scripts/`、`tools/`。最省事是把整个仓库目录软链接过去）
-2. 放进你用的 agent 的 skills 目录：
-
-| 环境 | 放哪里 |
-|---|---|
-| Claude Code / Claude 桌面 | `~/.claude/skills/` |
-| Codex（ChatGPT 桌面） | `~/.codex/skills/` |
-| Gemini CLI | `~/.gemini/skills/` |
-| DeepSeek Harness（dsh） | `~/.dsh/skills/resanity/`（`~/.agents/skills/` 也可）；项目级放 `<项目>/.dsh/skills/`。软链接可行：`ln -s "$(pwd)" ~/.dsh/skills/resanity` |
-| OpenClaw | workspace 的 skills 目录（ClawHub 支持从 Claude 格式一键导入） |
-| Hermes | skills 目录（开放 Agent Skills 标准，互通） |
-
-3. 完事。**没有第三方运行依赖**——研究热路径仍是一份说明书 + 模型自带工具；价格锚、提醒和正式报告校验只用 Python 标准库或对应宿主已有依赖。
-
-## 怎么用
-
-### 第一次：直接问
-
-```
-你：XX 的题材是真的吗？
-散修：根结论 → 可能性地图（多头/基准/空头）→ 证据审计（最弱环节、缺口）
-     → 定价对照（市场已定价什么/未定价什么）→ 载体比较 → 下一步验证 → 认知锚
+```text
+截至今天，这家公司从产品验证到收入和现金的哪一段已经被一手证据闭合？
 ```
 
-每个数字带来源链接和日期；查不到的东西它会明说"查不到"，而不是编一个给你。
+非投资任务请显式调用：
 
-> DeepSeek Harness 用户：会话里输入 `/resanity` 会确定性加载全文；也可以直接问问题，模型按描述自动调用。锚库和决策日志落在**会话工作目录**（`anchors/`、`journal/`），不落在 skill 安装目录——换项目换锚库，换平台可整体带走。
-
-### 正式报告：模型写，薄壳只验机械边界
-
-模型仍然独自决定根结论、路径、证据标签和下一步。保存完整报告或做 A/B 验证时，模型只在极小的审计收据里填写主张/来源索引和预算上限；token、工具调用与耗时由宿主在运行结束后生成 `resanity.host-receipt.v1`，模型不得自报。然后运行：
-
-```sh
-python3 tools/research_check.py path/to/report.receipt.json
-# 正式验证要求来源快照和完整成本计量：
-python3 tools/research_check.py path/to/report.receipt.json --strict
+```text
+请使用 Resanity，为这个产品方案画可能性地图并审计三条承重主张。
 ```
 
-它只检查报告/SKILL/来源快照 hash、as-of、`[C#] → [E#]` 引用、上游来源血缘和预算；strict 模式再解析规范化宿主收据、交叉核对运行计量并绑定原始会话 hash。没有宿主收据却填写运行数字会直接失败。它**不会理解或改写结论，也不会自动重跑**。通过只叫 `AUDIT_RECEIPT_OK`，不等于研究正确。完整边界见 [ARCHITECTURE.md](ARCHITECTURE.md)，当前版本验证协议见 [validation/README.md](validation/README.md)。
+最小输出是一句根结论、关键原子主张卡和唯一下一验证。只有问题需要时才加入投资对照、锚或正式证据表。
 
-## DeepSeek Harness 插件部署（可选，推荐）
+## 文件结构
 
-本仓库同时是一个 dsh 插件包（`lib/index.js`），在"文件目录安装"之上再给四样东西：
-
-1. **内置 skill 分发**：插件把 `SKILL.md` 注册进 DSH 的 skill 注册表（rank 600，本地/项目副本可同名覆盖），其他 DSH 用户装上插件即得 skill；
-2. **锚体检定时提醒**：用 DSH 的 `ctx.timer` 每 6 小时扫一遍所有活跃会话工作区的 `anchors/`，到期/临近（默认 3 天窗口）弹系统通知——**不再需要 LaunchAgent/cron 挂 `tools/anchor_check.py`**；
-3. **`/resanity-check` 命令**：随时在会话里手动体检，等价于 `python3 tools/anchor_check.py --no-notify`，输出直接显示在命令面板；
-4. **`/resanity-tushare` 命令**：`set <token> | status | clear | test` 管理 Tushare token（价格锚用）。token 存 `~/.dsh/resanity/credentials.json`（600 权限），脚本自动回退读取，不用再 export 环境变量；该命令 `recordInput: false`，token 绝不进命令日志。`set` 不限制 token 长度/格式（仅去掉粘贴混入的不可见零宽字符），保存后自动在线校验并回显结果；`test` 可随时重新校验。
-
-安装（以 web profile 为例）：
-
-```sh
-# 1. 把插件链进 DSH 的共享依赖层（profiles 共用一个 node_modules，
-#    loader 按包名从这里解析；web profile 目录本身没有 node_modules）
-ln -s "$(pwd)" ~/.dsh/profiles/node_modules/resanity
-# 若装了 pnpm，等价命令：dsh plugin add resanity@link:"$(pwd)"
-
-# 2. 在 ~/.dsh/profiles/web/cordis.patch.yml 里插入一个插件块：
-#    - insert:
-#        - id: resanity
-#          name: resanity
-#          config:
-#            checkIntervalHours: 6        # 后台体检周期（小时）
-#            reminderWindowDays: 3        # 提前几天开始提醒
-#            systemNotifications: true    # 系统通知（macOS/Linux）
-#            anchorsDirs: []              # 额外锚库目录（活跃会话工作区恒被扫描）
-
-# 3. 重启 dsh 生效；用 dsh --profile web --dump-config 确认 resanity 行已进组合。
-#    重启后验证：斜杠菜单（输入 /）出现 resanity-check 与 resanity-tushare；
-#    启动约 30 秒后插件跑第一次锚体检（有到期/临近锚会弹系统通知）。
+```text
+SKILL.md                        canonical 核心协议与路由
+references/investing.md         投资 profile 与完整报告格式
+references/anchors.md           锚生命周期与文件协议
+references/formal-audit.md      正式机械审计与身份绑定
+tools/skill_identity.py         active/canonical/profile 身份检查
+tools/research_check.py         报告机械检查
+tools/anchor_check.py           只读锚日期检查
+lib/index.js                    可选 DSH 插件
+validation/v2/                  v2 分层验证入口
 ```
 
-体检范围优先级：`$RESANITY_ANCHORS`（可用 `:` 分隔多目录）→ 配置 `anchorsDirs` → 所有活跃会话的 `<工作区>/anchors`。到期的锚会提醒"说「更新锚」即可"；错过日期后会持续保持 overdue，直到锚被更新，不会静默滚到下一年。
+## 安装与身份核对
 
-### 然后：养你的锚
+把整个目录放到宿主的 Skill 目录，保证 references 和 tools 与 `SKILL.md` 同根。常见候选位置：
 
-每次研究结束，它会给你留下 3–5 条**认知锚**——你能长期持有、能被一个具体事实更新的判断：
-
-| 修仙黑话 | 你的实际资产 | 含义 |
+| 宿主 | 项目副本 | 用户副本 |
 |---|---|---|
-| 道基 | 认知锚 | 可证伪的判断命题，写进 `anchors/` |
-| 修为境界 | 证据等级 | 假设 → 部分支持 → FACT 支持，随证据升档 |
-| 渡劫日 | 更新触发器 | 哪个事件出来，这条锚该重新验证 |
-| 走火入魔 | `[失效]` 锚 | 被推翻的判断，连同推翻它的事实一起保留——教训不删 |
+| Codex | `<cwd>/.codex/skills/resanity/` | `~/.codex/skills/resanity/` |
+| DSH | `<cwd>/.dsh/skills/resanity/` | `$DSH_HOME/skills/resanity/` 或 `~/.agents/skills/resanity/` |
 
-### 不止证否：养出远见和信念
+宿主实际返回的 locator 始终优先于候选表。正式运行前检查：
 
-证否让你不亏，但只证否不会让你赢——那是保险，不是投资。reSanity 多做了三件事：
+```sh
+python3 tools/skill_identity.py --host codex --cwd "$PWD" --profile core
+python3 tools/skill_identity.py --host dsh --cwd "$PWD" --profile investing
+```
 
-- **先行指标**：证据来得晚就没有边缘。订单先于收入、认证先于订单、产能承诺先于出货——检查点永远前移到最早可验证的信号上。
-- **检验履历**：信念 = 被攻击后仍站着的判断。每条锚记录每次检验的结果（通过/推翻），连续通过的锚升档——这是证据的累积确证，不是信心的自我催眠。
-- **锚定领先度**：每条锚记录"锚定时市场共识是什么"。半年后你数得出来自己比共识早看懂了几次。**远见不是天赋，是这个循环的次数。**
+如果宿主给出实际加载路径，追加 `--active-skill /actual/path/SKILL.md`。命令非零表示 active 副本或 profile 与 canonical 不一致。
 
-### 触发日：说三个字
+## 认知锚
 
-**"更新锚"**。它只查触发器里写好的科目，几分钟升档/失效。认知是资产不是笔记：报告会死，锚会活。
+只有用户明确要求时才读写工作目录的 `anchors/`。生命周期为：
 
-### 每天（可选）
+- `active`：等待后续事实，参与提醒；
+- `refuted`：被具名事实推翻，保留历史；
+- `realized`：等待事件已经兑现；
+- `archived`：决策结束或不再相关，但未被推翻。
 
-`tools/anchor_check.py` 是零依赖的确定性触发器检查（不调模型、不联网）：到期或临近三天时弹系统提醒。macOS 用 LaunchAgent 挂它，OpenClaw/Hermes 直接用它们的 cron。
+提醒器只读 `active` 的日期触发器。插件默认不发送系统通知；显式开启后也不会自动更新锚。
 
-> DeepSeek Harness 用户不需要这一步：装上面的插件，定时提醒就是 DSH 原生的（见「DeepSeek Harness 插件部署」）。
+## 正式报告
 
-## 它不做什么（诚实边界）
+普通聊天不需要收据。需要保存正式报告或做 A/B 时，先读 `references/formal-audit.md`，生成 `resanity.audit-receipt.v2`，再运行：
 
-- 不荐股、不下单、不设仓位、不承诺回报
-- 认知锚需要你说一句"更新锚"才会更新——提醒会到，检查是你的一句话
-- 它把"感觉"变成"可验证的判断"，**判断之后的行为永远是你自己的**
+```sh
+python3 tools/research_check.py path/to/report.receipt.json \
+  --skill /canonical/resanity/SKILL.md \
+  --active-skill /actual/loaded/resanity/SKILL.md
+```
 
-## 目前验证到哪一步
+正式验证增加 `--strict`。`AUDIT_RECEIPT_OK` 只代表机械合同闭合。
 
-前代薄宪法做过两组初步对照：六个冻结案例中主张正确率 100%、有效定价锚为强基线的 **3.2 倍**、token 约 1.02x；一个真实检索案例中身份遮蔽评分 29/30 vs 26/30、记录 token 约 0.91x。它们支持“轻量方向值得继续”，但不证明当前精确版本：样本小、评估者仍是模型、真实检索只有一题，且此后 `SKILL.md` 已继续修改。
+## DSH 插件（可选）
 
-因此本仓库当前状态明确为 **`UNBENCHMARKED_CURRENT`**。这些数字是历史先验，不是当前版本证书，更不是 Alpha、收益或 PMF。改动时先跑 4 题快速门禁；候选冻结后跑 [21 会话完整 T 回归](validation/dsh-full/README.md)，最后再按 [当前版本验证协议](validation/README.md) 保存强基线配对原始产物并做人类身份遮蔽评估。
+`lib/index.js` 提供 bundled Skill provider、`/resanity-check` 锚体检和可选 Tushare 凭据命令。项目/用户同名 Skill 可以遮蔽 bundled 副本，因此真实验证仍必须运行 identity check。
 
-## FAQ
+从本地 tarball 安装到指定 profile 时，使用 DSH 插件管理器；包内的最小
+`cordis.patch.yml` 只激活 Resanity，不组合场景或其他插件：
 
-- **它能告诉我 XX 会涨吗？** 不能，也不假装能。它会告诉你：这个价格已经相信了什么、要让"涨"成立哪几条事实必须为真、现在哪条已经为假、下一个验证日是几号。你要的不是预测，是这个清单。
-- **要买什么 API / 花多少钱？** 零。模型费用就是你本来在花的 agent 订阅，没有额外支出。
-- **没有 Tushare token 能用吗？** 能。A 股价格锚可换 BAOSTOCK（免 token）。想用 Tushare：DSH 里跑一次 `/resanity-tushare set <你的token>`（存 `~/.dsh/resanity/credentials.json`，仅脚本读取，不进日志和仓库）；其他环境设 `TUSHARE_TOKEN` 环境变量或 `RESANITY_CREDENTIALS` 指向凭据文件。token 永远是可选增强。
-- **数据存在哪？** 全部明文在你的机器上（`anchors/`、`journal/`）——换平台直接带走，没有任何厂商锁定。
-- **它是投资顾问吗？** 不是，也不打算是。它是你的研究员 + 账本 + 泼冷水专员。
+```sh
+dsh plugin --profile headless add /absolute/path/resanity-2.0.0-rc.1.tgz
+```
 
-## 开发
+安装成功后 `resanity` 应自动追加到该 profile 的 `dsh.profile.bundles`；不需要手工编辑
+profile patch 或创建 `node_modules` symlink。
 
-- 完整测试：`npm test`。它覆盖真实 Cordis 上下文、插件命令/定时器/凭据、锚逾期语义和报告收据的失败关闭；本地跑前先把 DSH 的依赖链进仓库：`ln -s <dsh 安装目录>/node_modules node_modules`；
-- 改 `SKILL.md` 即时生效（DSH 每个 step 重新快照目录与正文）；改 `lib/index.js` 插件逻辑需重启 dsh；
-- 凭据文件、锚库、决策日志都在 `~/.dsh` 或工作区，`git status` 应始终干净。
+配置中的 `systemNotifications` 默认 `false`；只有用户显式开启时才调用操作系统通知。Tushare 只是投资 profile 的可选价格数据入口，不进入核心研究协议。
+
+## 验证
+
+```sh
+npm test
+python3 <skill-creator>/scripts/quick_validate.py .
+python3 tools/validation_source_check.py
+env npm_config_cache=/private/tmp/resanity-npm-cache npm pack --dry-run
+```
+
+v2 分层为 core contract、investing profile、open network、anchor、trigger、install identity 和最终同 hash A/B。`validation/dsh-pilot` 与 `validation/dsh-full` 是 v1 历史基线，不是 v2 成绩。
+冻结候选在 2026-08-16 的 8 案例 DSH A/B 中经三角色盲化 AI 合议以 6:2 达到有限数值线，
+但不是 clean pass；四项已知缺陷和适用边界见
+[`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)。
+8 案例 DSH headless 采集器入口为 `npm run validate:v2:ab:dsh -- --help`；其 dry-run
+会先核对 B/R profile 差异、active Skill/profile hash、宿主 patch 与前六层收据，具体参数见
+`validation/v2/README.md`。
+
+## 边界
+
+- 不自动补证据、重试研究、改写结论或晋级状态；
+- 不建立研究状态机、语义数据库或固定多 Agent 编排；
+- 不下单、不设仓位、不承诺回报；
+- 不把工程收据、测试或包安装成功表述成研究正确。
 
 ## License
 
-MIT © 2026 reSanity Contributors
+MIT © 2026 Resanity Contributors

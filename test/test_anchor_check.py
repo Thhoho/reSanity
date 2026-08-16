@@ -5,7 +5,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-from tools.anchor_check import next_trigger, parse_dates
+from tools.anchor_check import anchor_status, next_trigger, parse_dates
 
 
 class AnchorDateTests(unittest.TestCase):
@@ -25,6 +25,20 @@ class AnchorDateTests(unittest.TestCase):
             anchor = Path(raw_dir) / "主题.md"
             anchor.write_text("## 锚 1\n- 更新触发器：2026-08-13 半年报\n", encoding="utf-8")
             self.assertEqual(next_trigger(anchor, date(2026, 8, 14)), ("主题", date(2026, 8, 13)))
+
+    def test_only_active_lifecycle_is_reminded(self) -> None:
+        self.assertEqual(anchor_status("A1\n- 状态：active\n"), "active")
+        self.assertEqual(anchor_status("A2\n- 状态：refuted\n"), "refuted")
+        self.assertEqual(anchor_status("A3\n- status: realized\n"), "realized")
+        self.assertEqual(anchor_status("A4 [archived]\n"), "archived")
+        with tempfile.TemporaryDirectory() as raw_dir:
+            anchor = Path(raw_dir) / "主题.md"
+            anchor.write_text(
+                "## A1\n- 状态：refuted\n- 更新触发器：2026-08-13\n"
+                "\n## A2\n- 状态：active\n- 更新触发器：2026-08-20\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(next_trigger(anchor, date(2026, 8, 14)), ("主题", date(2026, 8, 20)))
 
 
 if __name__ == "__main__":

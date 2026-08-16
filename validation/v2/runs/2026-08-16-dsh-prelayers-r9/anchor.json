@@ -1,0 +1,15 @@
+{
+  "schema_version": "resanity.manual-layer-review.v1",
+  "layer": "anchor",
+  "status": "PASS",
+  "reviewed_cases": [
+    {"id": "A01-active-refuted", "report_sha256": "f54295b816a6fe7750310f2dcef0d29abe7e2114ccb0f83fc385a88de73dd254"},
+    {"id": "A02-refuted", "report_sha256": "fa42eaeb09153f0c7912c069673f4b5067091eab7a7d4fdca434b2baf18dc7e2"},
+    {"id": "A03-active-realized", "report_sha256": "dd6dd2596c48001db5cb963a50bf22f299decde3dd35fc5579e0cc5455dfc36d"},
+    {"id": "A04-realized", "report_sha256": "036cb4bc25fec8aba555050e8915fa3c662b6936fbad119d18e2d881dac24a90"},
+    {"id": "A05-active-archived", "report_sha256": "c00567a344fcf787776c3345651f146f1df620f6c5472d1d4ee6f8e02fecbe8e"},
+    {"id": "A06-archived", "report_sha256": "6597070e393ffe157603b5dc5b2321d75bbac2f7b5d0217507606942acba8d59"}
+  ],
+  "judgment": "All three longitudinal pairs preserve the original proposition and prior history, use the intended active/refuted/realized/archived lifecycle, remove reminders after leaving active, update the index, and show no script-driven semantic mutation.",
+  "method_status": "UNBENCHMARKED_CURRENT"
+}

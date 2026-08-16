@@ -5,6 +5,7 @@ import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { Context } from "@deepseek-ai/cordis";
 import {
+	anchorStatus,
 	anchorRoots,
 	apply,
 	clearCredentials,
@@ -46,6 +47,12 @@ const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
 	// 失效锚不参与
 	const text = `## 锚 1：有效\n- 更新触发器：2026-08-25\n\n## 锚 2：[失效] 已推翻\n- 更新触发器：2026-08-13\n`;
 	assert.equal(iso(nextTriggerDate(text, today)), "2026-08-25");
+	assert.equal(anchorStatus("锚 1\n- 状态：active\n"), "active");
+	assert.equal(anchorStatus("锚 2\n- 状态：refuted\n"), "refuted");
+	assert.equal(anchorStatus("锚 3\n- status: realized\n"), "realized");
+	assert.equal(anchorStatus("锚 4 [archived]\n"), "archived");
+	const lifecycle = `## active\n- 状态：active\n- 更新触发器：2026-08-25\n\n## realized\n- 状态：realized\n- 更新触发器：2026-08-13\n`;
+	assert.equal(iso(nextTriggerDate(lifecycle, today)), "2026-08-25");
 }
 
 // ── 2. 纯函数：扫描与渲染 ──────────────────────────────────────────────────
@@ -118,19 +125,18 @@ const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
 		assert.equal(candidates.length, 1);
 		assert.equal(candidates[0].name, "resanity");
 		assert.equal(candidates[0].rank, 600);
-		assert.ok(candidates[0].description.includes("散户研究心法"));
+		assert.ok(candidates[0].description.includes("投资研究可自动使用"));
+		assert.ok(candidates[0].description.includes("普通总结、编码、改写或一般问答"));
 		const definition = await providers[0].get(candidates[0]);
-		assert.ok(definition.content.startsWith("# reSanity"), "正文不含 frontmatter");
-		assert.ok(definition.content.includes("路径约定"));
-		assert.ok(definition.content.includes("否定承重主张必须直读裁决文件"));
-		assert.ok(definition.content.includes("闭合对象只能是声明过的公开检索边界"));
-		assert.ok(definition.content.includes("否定结论使用双边界契约"));
-		assert.ok(definition.content.includes("检索结论：截至 [as-of]"));
-		assert.ok(definition.content.includes("现实边界：这不证明现实中不存在"));
-		assert.ok(definition.content.includes("沉默不是官方否定"));
-		assert.ok(definition.content.includes("下一份文件继续沉默称为“第二次官方否定”"));
-		assert.ok(definition.content.includes("它不得猜测或自报 token"));
+		assert.ok(definition.content.startsWith("# Resanity"), "正文不含 frontmatter");
+		assert.ok(definition.content.includes("原子主张协议"));
+		assert.ok(definition.content.includes("观察到什么"));
+		assert.ok(definition.content.includes("可以推出什么"));
+		assert.ok(definition.content.includes("不能推出什么"));
+		assert.ok(definition.content.includes("对决策的影响"));
+		assert.ok(definition.content.includes("references/investing.md"));
 		assert.equal(existsSync(join(definition.resourceBase.path, "scripts")), true);
+		assert.equal(existsSync(join(definition.resourceBase.path, "references", "investing.md")), true);
 		assert.equal(existsSync(join(definition.resourceBase.path, "SKILL.md")), true);
 
 		// 命令
@@ -176,6 +182,12 @@ const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
 
 // ── 4. DSH 失败路径回归提示 ────────────────────────────────────────────────
 {
+	const manifest = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+	assert.equal(manifest.dsh.bundle.patch, "./cordis.patch.yml");
+	assert.ok(manifest.files.includes("cordis.patch.yml"));
+	const activation = await readFile(new URL("../cordis.patch.yml", import.meta.url), "utf8");
+	assert.equal(activation, "- insert:\n    - id: resanity\n      name: resanity\n");
+
 	const prompt = await readFile(
 		new URL("../validation/dsh-pilot/prompts/C04F-T-unreadable.md", import.meta.url),
 		"utf8",
@@ -286,7 +298,7 @@ const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
 		const test = await tushare.handler({ rawInput: "test", agent });
 		assert.ok(test.text.includes("在线校验通过"), test.text);
 
-		// 自动在线校验失败：已保存 + 明确反馈（error）
+		// 自动在线校验失败：不覆盖已保存的有效 token
 		globalThis.fetch = async () =>
 			new Response(JSON.stringify({ code: -2002, msg: "token不正确" }), {
 				status: 200,
@@ -296,14 +308,16 @@ const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
 		assert.equal(warned.kind, "error");
 		assert.ok(warned.text.includes("自动在线校验未通过"), warned.text);
 		assert.ok(warned.text.includes("-2002"), warned.text);
+		assert.equal((await readCredentials()).token, TOKEN);
 
-		// 网络不可用：已保存 + 提示稍后 test
+		// 网络不可用：不保存、不覆盖
 		globalThis.fetch = async () => {
 			throw new Error("offline");
 		};
 		const offline = await tushare.handler({ rawInput: `set ${"c".repeat(40)}`, agent });
-		assert.equal(offline.kind, "success");
-		assert.ok(offline.text.includes("未能在线校验"), offline.text);
+		assert.equal(offline.kind, "error");
+		assert.ok(offline.text.includes("token 未保存"), offline.text);
+		assert.equal((await readCredentials()).token, TOKEN);
 
 		// clear → status 未配置
 		const cleared = await tushare.handler({ rawInput: "clear", agent });

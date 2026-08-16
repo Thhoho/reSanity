@@ -1,0 +1,11 @@
+{
+  "schema_version": "resanity.manual-layer-review.v1",
+  "layer": "investing_profile",
+  "status": "PASS",
+  "reviewed_cases": [
+    {"id": "I01-company-exposure", "report_sha256": "1ef0558c45a4d9660c8f4498be1b903bda6aa7b9c36a80c473e93ed50acfa47b"},
+    {"id": "I02-profit-pool", "report_sha256": "811bb35589db2963a286581606e75dbe56fb2865f59cb54303443a142f25d4b7"}
+  ],
+  "judgment": "The r9 I01 root conclusion now says the packet does not close attributable exposure and that reality remains unknown; the later cards are consistent with that boundary. I02 preserves conditional observations, source lineage, company attribution gaps, and non-evaluable pricing inputs.",
+  "method_status": "UNBENCHMARKED_CURRENT"
+}

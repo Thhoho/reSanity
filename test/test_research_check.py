@@ -8,6 +8,7 @@ from io import StringIO
 from pathlib import Path
 
 from tools.research_check import main, sha256_file, validate_receipt
+from tools.skill_identity import file_locator, profile_identity
 
 
 class ResearchCheckTests(unittest.TestCase):
@@ -56,8 +57,19 @@ class ResearchCheckTests(unittest.TestCase):
         self.write_host_receipt()
         self.receipt_path = self.root / "report.receipt.json"
         self.receipt = {
-            "schema_version": "resanity.audit-receipt.v1",
-            "method": {"skill_sha256": sha256_file(self.skill)},
+            "schema_version": "resanity.audit-receipt.v2",
+            "method": {
+                "canonical_skill_sha256": sha256_file(self.skill),
+                "profile": {
+                    "name": "core",
+                    "sha256": profile_identity(self.root, "core")["sha256"],
+                },
+                "active": {
+                    "locator": file_locator(self.skill),
+                    "skill_sha256": sha256_file(self.skill),
+                    "profile_sha256": profile_identity(self.root, "core")["sha256"],
+                },
+            },
             "report": {
                 "path": "report.md",
                 "sha256": sha256_file(self.report),
@@ -140,9 +152,23 @@ class ResearchCheckTests(unittest.TestCase):
         self.assertIn("source.after_as_of:E1", errors)
 
     def test_exact_skill_hash_is_required(self) -> None:
-        self.receipt["method"]["skill_sha256"] = "0" * 64
+        self.receipt["method"]["canonical_skill_sha256"] = "0" * 64
         errors, _ = self.validate()
-        self.assertIn("method.skill_sha256_mismatch", errors)
+        self.assertIn("method.canonical_skill_sha256_mismatch", errors)
+
+    def test_active_skill_locator_and_hash_are_required(self) -> None:
+        self.receipt["method"]["active"]["locator"] = "file:///wrong/SKILL.md"
+        self.receipt["method"]["active"]["skill_sha256"] = "0" * 64
+        errors, _ = self.validate()
+        self.assertIn("method.active_locator_mismatch", errors)
+        self.assertIn("method.active_skill_sha256_mismatch", errors)
+        self.assertIn("method.active_skill_not_canonical", errors)
+
+    def test_profile_hash_is_bound(self) -> None:
+        self.receipt["method"]["profile"]["sha256"] = "0" * 64
+        errors, _ = self.validate()
+        self.assertIn("method.profile_sha256_mismatch", errors)
+        self.assertIn("method.active_profile_not_canonical", errors)
 
     def test_fact_reposts_do_not_become_independent(self) -> None:
         source = self.receipt["sources"][0]

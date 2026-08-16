@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Deterministic anchor-trigger check — no LLM, no network, no writes.
 
-Parses the `更新触发器` lines of anchors/*.md for dates, finds each theme's
-earliest unresolved trigger, and sends a macOS notification when it is overdue,
+Parses the `更新触发器` lines of active anchors for dates, finds each theme's
+earliest unresolved trigger, and optionally sends a macOS notification when it is overdue,
 due, or within WINDOW days. Event-based triggers without a date (e.g.
 "朱雀三号发射窗口") are skipped by design — they surface in the weekly review.
 
@@ -51,13 +51,30 @@ def parse_dates(text: str, today: date) -> list[date]:
     return list(dict.fromkeys(found))
 
 
+def anchor_status(block: str) -> str:
+    """Read lifecycle only; missing status keeps legacy anchors active."""
+    header = block.splitlines()[0] if block.splitlines() else ""
+    lowered = header.lower()
+    if "失效" in header or "[refuted]" in lowered:
+        return "refuted"
+    if "[realized]" in lowered:
+        return "realized"
+    if "[archived]" in lowered:
+        return "archived"
+    match = re.search(
+        r"^\s*-\s*(?:状态|status)\s*[:：]\s*(active|refuted|realized|archived)\s*$",
+        block,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    return match.group(1).lower() if match else "active"
+
+
 def next_trigger(anchor_file: Path, today: date) -> tuple[str, date] | None:
     text = anchor_file.read_text(encoding="utf-8")
     blocks = re.split(r"^## ", text, flags=re.MULTILINE)[1:]
     dates = []
     for block in blocks:
-        header = block.splitlines()[0] if block.splitlines() else ""
-        if "失效" in header:
+        if anchor_status(block) != "active":
             continue
         match = re.search(r"更新触发器[:：]([^\n]*)", block)
         if not match:
