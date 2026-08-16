@@ -468,6 +468,23 @@ def integer(value: Any) -> int:
     return value if isinstance(value, int) and not isinstance(value, bool) else 0
 
 
+TOOL_PROTOCOL_MARKERS = (
+    "<｜｜DSML｜｜tool_calls>",
+    "<｜｜DSML｜｜invoke",
+    "<|tool_calls|>",
+    "<|invoke",
+)
+
+
+def report_delivery_failures(report: str) -> list[str]:
+    """Check delivery shape without interpreting research semantics."""
+    if not report.strip():
+        return ["report_missing"]
+    if any(marker in report for marker in TOOL_PROTOCOL_MARKERS):
+        return ["report_tool_protocol_leak"]
+    return []
+
+
 def parse_dsh_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
     event_types: Counter[str] = Counter()
     tool_call_attempts: Counter[str] = Counter()
@@ -723,7 +740,8 @@ def run_one(
         metrics = parse_dsh_metrics(events)
         skills = skill_names(events)
 
-    report_present = bool(stdout.strip())
+    report_failures = report_delivery_failures(stdout)
+    report_present = "report_missing" not in report_failures
     if report_present:
         report_path = operator_dir / "report.md"
         report_path.write_text(stdout, encoding="utf-8")
@@ -783,8 +801,7 @@ def run_one(
         failures.append("dsh_exit_code")
     if len(sessions) != 1:
         failures.append("raw_session_count")
-    if not report_present:
-        failures.append("report_missing")
+    failures.extend(report_failures)
     if metrics:
         expected = {
             "provider": args.expected_provider,

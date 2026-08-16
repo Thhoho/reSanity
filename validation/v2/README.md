@@ -1,14 +1,17 @@
 # Resanity v2 分层验证
 
-> 当前结果：冻结候选的 8 案例 DSH A/B 已完成，三角色盲化 AI 合议为
+> 当前结果：`2.0.0-rc.1` 的 8 案例 DSH A/B 已完成，三角色盲化 AI 合议为
 > `MEETS_LIMITED_AB_LINE_BY_THREE_ROLE_AI_PANEL`，但不是 clean pass；方法状态仍为
-> `UNBENCHMARKED_CURRENT`。本目录不把 v1 结果迁移成 v2 成绩。
+> `UNBENCHMARKED_CURRENT`。`2.0.0-rc.2` 已改变方法 identity，尚无新的同 hash 行为成绩。
+> 本目录不把 v1 结果或 RC1 结果迁移成 RC2 成绩。
 
 2026-08-16 的 Codex 迭代预检及失败证据保存在 [runs/2026-08-16-iterative-preflight/](runs/2026-08-16-iterative-preflight/README.md)。该批产物跨多个候选 hash，只用于定位和收敛架构，不是冻结候选成绩。
 
 同日最终 A/B 的冻结身份、合议结果和已知缺陷保存在
 [runs/2026-08-16-dsh-final-ab-ai-panel/](runs/2026-08-16-dsh-final-ab-ai-panel/README.md)。
 三位评审是空白上下文的独立 AI 角色，不是独立人类；该结果不证明广泛研究有效、Alpha、PMF 或 stable 发布就绪。
+RC2 的四项窄修复、机械验证和 fresh DSH 未运行边界记录在
+[runs/2026-08-16-rc2-targeted-repair/](runs/2026-08-16-rc2-targeted-repair/README.md)。
 `suite.json` 保持为未预填结果的可复用协议模板，因此其中的 `result_status` 仍是
 `NOT_RUN`；具体运行状态只写入带日期、identity 与证据绑定的 `runs/` 记录。
 

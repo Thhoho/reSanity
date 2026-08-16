@@ -27,6 +27,10 @@ class ValidationContractTests(unittest.TestCase):
             "形式逻辑裁决也属于推断",
             "必须收录报告中每个承重来源",
             "只观察到原始数值差时",
+            "相容性证据与区分性证据",
+            "动作已生效、覆盖范围已确认",
+            "已保存来源若含相反或限定性观察",
+            "逐字服从带日期原始文件",
             "references/investing.md",
             "references/anchors.md",
             "references/formal-audit.md",
@@ -162,6 +166,8 @@ class ValidationContractTests(unittest.TestCase):
         investing = (ROOT / "references/investing.md").read_text(encoding="utf-8")
         self.assertIn("预算都是硬上限", skill)
         self.assertIn("主动研究最多使用 `N-4` 次", skill)
+        self.assertIn("这 4 次不是候补研究预算", skill)
+        self.assertIn("不得以待执行的工具请求、协议标记或半截表格结束", skill)
         self.assertIn("来源资格当作硬边界", skill)
         self.assertIn("不得承重、不得进入承重快照", skill)
         self.assertIn("每个上游来源只保留一份规范原始快照", skill)
@@ -172,6 +178,8 @@ class ValidationContractTests(unittest.TestCase):
         self.assertIn("无可归属暴露", investing)
         self.assertIn("同一血缘链", investing)
         self.assertIn("公司整体积压、收入、利润和经营现金流", investing)
+        self.assertIn("同样适用于“公司合并口径”", investing)
+        self.assertIn("不得写链条闭合、订单转化或回款兑现已被证明", investing)
         self.assertIn("交付前对标题、根结论和摘要做三项闸门", investing)
         self.assertIn("二手站点只可定位", investing)
 

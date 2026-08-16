@@ -1,0 +1,44 @@
+{
+  "schema_version": "resanity.rc-targeted-repair.v1",
+  "status": "RC2_ENGINEERING_RELEASE_READY_BEHAVIOR_NOT_RERUN",
+  "version": "2.0.0-rc.2",
+  "base_commit": "45cc0db7db87614b69e552d356aeedc68546d64f",
+  "branch": "codex/resanity-v2-rc2",
+  "method_status": "UNBENCHMARKED_CURRENT",
+  "identity": {
+    "skill_sha256": "0704f56286ad6de61ba9c6e1954fb7b38a0c0a8e02f22bfc1ede5422a857c381",
+    "profiles_sha256": {
+      "core": "76c184f2f873a975b0327b15288ae483600fd66b3000214966741647fc2838da",
+      "investing": "3a1f7f9f8d2b5ae695753efd011738cf24acf4841e599756fd79a53cd1895de8",
+      "anchors": "71e0097037831ef836841242f3e57931d0af6cb28f1b3d0ccfb351728ad80faa",
+      "formal-audit": "f1e7997e21fd5fab6625b52d1cabb1dee4324cbecaa8b1360f59f03ced61b3aa"
+    }
+  },
+  "tarball": {
+    "filename": "resanity-2.0.0-rc.2.tgz",
+    "sha256": "6b6f65e929594b2c38ecfb27031d0fa1b47d3403fce6790892adf4f0889c93b4",
+    "files": 27,
+    "internal_v2_validation_corpus_included": false
+  },
+  "completed_gates": {
+    "npm_test": "PASS_62_PYTHON_PLUS_PLUGIN_AND_BUDGET_GUARD",
+    "skill_quick_validate": "PASS",
+    "v1_validation_source": "PASS_66_FILES_ZERO_DRIFT",
+    "identity": "PASS_CANONICAL_ACTIVE_AND_PROFILES",
+    "dsh_profile_pair_dry_run": "PASS",
+    "old_o02_delivery_replay": "PASS_DETECTED_REPORT_TOOL_PROTOCOL_LEAK",
+    "package_dry_run": "PASS_27_FILES"
+  },
+  "fresh_behavior_validation": {
+    "status": "NOT_RUN_REQUIRES_EXPLICIT_DEEPSEEK_DATA_EGRESS_AUTHORIZATION",
+    "selected_cases": [
+      "C03-technical-debug",
+      "O01-product-passkey",
+      "O02-policy-outcome",
+      "O03-investing-exposure"
+    ],
+    "automatic_retries": 0,
+    "external_sessions_started": 0
+  },
+  "release_boundary": "Local RC2 commit and tarball only; no stable tag, push, publish, DSH live install, or effectiveness claim."
+}

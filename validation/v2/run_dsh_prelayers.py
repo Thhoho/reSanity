@@ -204,8 +204,7 @@ def run_session(
         failures.append("dsh_exit_code")
     if len(sessions) != 1:
         failures.append("raw_session_count")
-    if not stdout.strip():
-        failures.append("report_missing")
+    failures.extend(DSH.report_delivery_failures(stdout))
     if metrics:
         expected = {
             "provider": args.expected_provider,

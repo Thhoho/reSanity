@@ -1,6 +1,6 @@
 # Resanity v2 架构
 
-> 代码版本：`2.0.0-rc.1`（release candidate）。方法状态：`UNBENCHMARKED_CURRENT`。
+> 代码版本：`2.0.0-rc.2`（release candidate）。方法状态：`UNBENCHMARKED_CURRENT`。
 > 工程通过、机械收据闭合、安装身份一致或有限 A/B 达线，都不等于研究效果、Alpha 或 PMF。
 
 ## 根原则
@@ -113,9 +113,11 @@ v1 的 `validation/dsh-pilot` 与 `validation/dsh-full` 由冻结提交 `746c21d
 
 可接受但必须记录的小问题：非关键措辞/排版差异；不影响 identity/hash 的路径展示差异；不改变根结论和行动的 `MAJOR_NON_P0`；未完成真实 A/B，因此状态继续为 `UNBENCHMARKED_CURRENT`。
 
-当前 RC 的冻结候选完成了 8 案例 DSH 最终 A/B 和三角色盲化 AI 合议，数值线达标但不是 clean pass。
-这只支持候选版本管理和定向改进，不解除 `UNBENCHMARKED_CURRENT`，也不等于 stable 发布就绪。
-记录见 [`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)。
+`2.0.0-rc.1` 完成了 8 案例 DSH 最终 A/B 和三角色盲化 AI 合议，数值线达标但不是 clean pass。
+`2.0.0-rc.2` 改变了 canonical Skill 与 investing profile hash，RC1 成绩不能迁移；在新的同 hash 行为验证完成前，
+它只支持候选版本管理和定向改进，不解除 `UNBENCHMARKED_CURRENT`，也不等于 stable 发布就绪。
+RC1 合议与 RC2 修复记录分别见 [`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)
+和 [`validation/v2/runs/2026-08-16-rc2-targeted-repair/`](validation/v2/runs/2026-08-16-rc2-targeted-repair/README.md)。
 
 ## 明确不做
 

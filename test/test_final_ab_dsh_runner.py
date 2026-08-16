@@ -208,6 +208,26 @@ class DshFinalAbRunnerTests(unittest.TestCase):
         self.assertEqual(metrics["web_search"], 1)
         self.assertEqual(metrics["budget_denied_tool_calls"], 1)
 
+    def test_report_delivery_shape_rejects_tool_protocol_leaks(self) -> None:
+        leaked = (
+            "预算接近上限，随后交付。\n"
+            "<｜｜DSML｜｜tool_calls>\n"
+            "<｜｜DSML｜｜invoke name=\"write\">"
+        )
+        self.assertEqual(
+            self.runner.report_delivery_failures(leaked),
+            ["report_tool_protocol_leak"],
+        )
+        self.assertEqual(
+            self.runner.report_delivery_failures(
+                "# 根结论\n\n证据不足。\n\n# 来源表\n\n- E1"
+            ),
+            [],
+        )
+        self.assertEqual(
+            self.runner.report_delivery_failures("  \n"), ["report_missing"]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
