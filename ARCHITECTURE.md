@@ -1,6 +1,6 @@
-# Resanity v2 架构
+# Resanity 0.2 架构
 
-> 代码版本：`2.0.0-rc.2`（release candidate）。方法状态：`UNBENCHMARKED_CURRENT`。
+> 代码版本：`0.2.0`（正式发行版）。方法状态：`UNBENCHMARKED_CURRENT`。
 > 工程通过、机械收据闭合、安装身份一致或有限 A/B 达线，都不等于研究效果、Alpha 或 PMF。
 
 ## 根原则
@@ -32,7 +32,7 @@ v2 不把投资完整报告、锚持久化或正式收据放进所有请求的�
 | 原子主张卡及证据标签 | 模型 | 否 |
 | 结论、反例、下一验证 | 模型 | 否 |
 | 锚命题与 active/refuted/realized/archived 状态 | 模型与用户 | 否 |
-| 文件 hash、引用是否闭合、发布日期是否越过 as-of | 外壳 | 只读检查 |
+| 文件 hash、引用是否闭合、声明的来源日期/覆盖期是否满足 as-of | 外壳 | 只读检查 |
 | 声明的来源血缘、预算、宿主计量 | 外壳 | 只读检查 |
 | active locator、canonical/profile hash | 外壳 | 只读检查 |
 
@@ -86,7 +86,7 @@ profiles 是条件加载文件的机械组合，不是第二个 Skill，也不�
 
 1. canonical/active Skill 与 profile hash；
 2. 报告、提示、来源快照和宿主收据 hash；
-3. 来源发布日期与报告 as-of；
+3. 主张时态、来源日期依据/覆盖期与报告 as-of 的兼容矩阵；
 4. `[C#]` / `[E#]` 引用闭合；
 5. 声明的上游 lineage、`NO_RESULT` 范围和 `INSUFFICIENT` gap；
 6. 宿主计量与预声明预算。
@@ -114,10 +114,13 @@ v1 的 `validation/dsh-pilot` 与 `validation/dsh-full` 由冻结提交 `746c21d
 可接受但必须记录的小问题：非关键措辞/排版差异；不影响 identity/hash 的路径展示差异；不改变根结论和行动的 `MAJOR_NON_P0`；未完成真实 A/B，因此状态继续为 `UNBENCHMARKED_CURRENT`。
 
 `2.0.0-rc.1` 完成了 8 案例 DSH 最终 A/B 和三角色盲化 AI 合议，数值线达标但不是 clean pass。
-`2.0.0-rc.2` 改变了 canonical Skill 与 investing profile hash，RC1 成绩不能迁移；在新的同 hash 行为验证完成前，
-它只支持候选版本管理和定向改进，不解除 `UNBENCHMARKED_CURRENT`，也不等于 stable 发布就绪。
-RC1 合议与 RC2 修复记录分别见 [`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)
-和 [`validation/v2/runs/2026-08-16-rc2-targeted-repair/`](validation/v2/runs/2026-08-16-rc2-targeted-repair/README.md)。
+`2.0.0-rc.2` 的冻结定向 DSH 集合为 3/4，O01 暴露“当前页回填历史状态”；预发布候选 `2.0.0-rc.3` 因此新增显式时态资格矩阵，
+并在宿主交付失败时保全工作区报告但不把失败改写为成功。该候选新 identity 的 C03/O01/O02/O03 定向 DSH 前向验证为
+4/4 机械完成且语义通过；正式 `0.2.0` 保持同一 Skill/profile identity。该结果只覆盖本次缺陷与邻近回归，
+不解除 `UNBENCHMARKED_CURRENT`，也不等于完整 A/B 或方法有效性已稳定。
+RC1 合议与 RC2 失败记录分别见 [`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)
+和 [`validation/v2/runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/`](validation/v2/runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/README.md)。
+0.2.0 所绑定的预发布候选定向前向记录见 [`validation/v2/runs/2026-08-17-rc3-targeted-dsh/`](validation/v2/runs/2026-08-17-rc3-targeted-dsh/README.md)。
 
 ## 明确不做
 

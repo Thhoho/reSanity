@@ -36,6 +36,30 @@ BOUNDARIES = {
     "INSUFFICIENT",
 }
 SOURCE_KINDS = {"PRIMARY", "SECONDARY", "DATA", "INDEX"}
+TEMPORAL_MODES = {
+    "EVENT_BY_DATE",
+    "STATE_AT_AS_OF",
+    "ABSENCE_BY_AS_OF",
+    "TIMELESS",
+}
+TEMPORAL_BASES = {
+    "DATED_PUBLICATION",
+    "VERSIONED_ARTIFACT",
+    "ARCHIVED_SNAPSHOT",
+    "LIVE_CURRENT",
+    "UNKNOWN",
+}
+HISTORICAL_TEMPORAL_BASES = {
+    "DATED_PUBLICATION",
+    "VERSIONED_ARTIFACT",
+    "ARCHIVED_SNAPSHOT",
+}
+DATE_EVIDENCE_KINDS = {
+    "DOCUMENT_DATE",
+    "DOCUMENT_METADATA",
+    "VERSION_LABEL",
+    "ARCHIVE_TIMESTAMP",
+}
 ID_RE = re.compile(r"^[A-Z][A-Z0-9_-]{0,31}$")
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,6 +98,12 @@ def _date(value: Any, code: str, errors: list[str]) -> date | None:
         errors.append(code)
         return None
     return parsed
+
+
+def _optional_date(value: Any, code: str, errors: list[str]) -> date | None:
+    if value is None:
+        return None
+    return _date(value, code, errors)
 
 
 def _inside(base: Path, raw: Any, code: str, errors: list[str]) -> Path | None:
@@ -423,6 +453,7 @@ def validate_receipt(
         raw_sources = []
         errors.append("receipt.sources_missing")
     sources: dict[str, dict[str, Any]] = {}
+    source_temporal: dict[str, dict[str, Any]] = {}
     for index, item in enumerate(raw_sources):
         prefix = f"source[{index}]"
         if not isinstance(item, dict):
@@ -441,12 +472,87 @@ def validate_receipt(
             errors.append(f"source.locator_invalid:{source_id}")
         if not _text(item.get("publisher")):
             errors.append(f"source.publisher_missing:{source_id}")
-        published_at = _date(
+        temporal_basis = item.get("temporal_basis")
+        if temporal_basis is None:
+            errors.append(f"source.temporal_basis_missing:{source_id}")
+            temporal_basis = ""
+        elif temporal_basis not in TEMPORAL_BASES:
+            errors.append(f"source.temporal_basis_invalid:{source_id}")
+            temporal_basis = ""
+
+        published_at = _optional_date(
             item.get("published_at"), f"source.published_at_invalid:{source_id}", errors
         )
-        _date(item.get("retrieved_at"), f"source.retrieved_at_invalid:{source_id}", errors)
+        retrieved_at = _date(
+            item.get("retrieved_at"), f"source.retrieved_at_invalid:{source_id}", errors
+        )
+        coverage_through = _optional_date(
+            item.get("coverage_through"),
+            f"source.coverage_through_invalid:{source_id}",
+            errors,
+        )
+        evidence_date = None
+        date_evidence = item.get("date_evidence")
+        if temporal_basis in HISTORICAL_TEMPORAL_BASES:
+            if not isinstance(date_evidence, dict):
+                errors.append(f"source.publication_evidence_missing:{source_id}")
+            else:
+                evidence_kind = date_evidence.get("kind")
+                evidence_date = _date(
+                    date_evidence.get("value"),
+                    f"source.publication_evidence_date_invalid:{source_id}",
+                    errors,
+                )
+                if evidence_kind not in DATE_EVIDENCE_KINDS:
+                    errors.append(f"source.publication_evidence_kind_invalid:{source_id}")
+                if not _text(date_evidence.get("anchor")):
+                    errors.append(f"source.publication_evidence_anchor_missing:{source_id}")
+                expected_kinds = {
+                    "DATED_PUBLICATION": {"DOCUMENT_DATE", "DOCUMENT_METADATA"},
+                    "VERSIONED_ARTIFACT": {
+                        "DOCUMENT_DATE",
+                        "DOCUMENT_METADATA",
+                        "VERSION_LABEL",
+                    },
+                    "ARCHIVED_SNAPSHOT": {"ARCHIVE_TIMESTAMP"},
+                }
+                if evidence_kind not in expected_kinds.get(temporal_basis, set()):
+                    errors.append(f"source.publication_evidence_kind_ineligible:{source_id}")
+        elif date_evidence is not None and not isinstance(date_evidence, dict):
+            errors.append(f"source.publication_evidence_invalid:{source_id}")
+
+        if temporal_basis in {"DATED_PUBLICATION", "VERSIONED_ARTIFACT"}:
+            if published_at is None:
+                errors.append(f"source.published_at_missing:{source_id}")
+            if (
+                published_at is not None
+                and evidence_date is not None
+                and published_at != evidence_date
+            ):
+                errors.append(f"source.publication_evidence_mismatch:{source_id}")
         if as_of is not None and published_at is not None and published_at > as_of:
             errors.append(f"source.after_as_of:{source_id}")
+        if (
+            as_of is not None
+            and temporal_basis == "ARCHIVED_SNAPSHOT"
+            and evidence_date is not None
+            and evidence_date > as_of
+        ):
+            errors.append(f"source.after_as_of:{source_id}")
+        if (
+            as_of is not None
+            and temporal_basis == "LIVE_CURRENT"
+            and retrieved_at is not None
+            and retrieved_at > as_of
+        ):
+            errors.append(f"source.live_current_after_as_of:{source_id}")
+        source_temporal[source_id] = {
+            "basis": temporal_basis,
+            "published_at": published_at,
+            "retrieved_at": retrieved_at,
+            "coverage_through": coverage_through,
+            "evidence_date": evidence_date,
+        }
         if not _text(item.get("lineage_key")):
             errors.append(f"source.lineage_key_missing:{source_id}")
         if item.get("kind") not in SOURCE_KINDS:
@@ -501,6 +607,10 @@ def validate_receipt(
         if boundary not in BOUNDARIES:
             errors.append(f"claim.boundary_invalid:{claim_id}")
             boundary = ""
+        temporal_mode = item.get("temporal_mode")
+        if temporal_mode not in TEMPORAL_MODES:
+            errors.append(f"claim.temporal_mode_invalid:{claim_id}")
+            temporal_mode = ""
         source_ids = item.get("source_ids")
         if not isinstance(source_ids, list) or any(not isinstance(value, str) for value in source_ids):
             errors.append(f"claim.source_ids_invalid:{claim_id}")
@@ -512,6 +622,30 @@ def validate_receipt(
             errors.append(f"claim.source_unknown:{claim_id}:{source_id}")
         known_sources = [sources[source_id] for source_id in source_ids if source_id in sources]
         referenced_sources.update(source_id for source_id in source_ids if source_id in sources)
+
+        for source_id in source_ids:
+            temporal = source_temporal.get(source_id)
+            if temporal is None:
+                continue
+            basis = temporal["basis"]
+            if temporal_mode == "EVENT_BY_DATE":
+                effective_date = temporal["published_at"] or temporal["evidence_date"]
+                if basis not in HISTORICAL_TEMPORAL_BASES or effective_date is None:
+                    errors.append(
+                        f"claim.temporal_source_ineligible:{claim_id}:{source_id}"
+                    )
+            elif temporal_mode in {"STATE_AT_AS_OF", "ABSENCE_BY_AS_OF"}:
+                if basis not in HISTORICAL_TEMPORAL_BASES:
+                    errors.append(
+                        f"claim.temporal_source_ineligible:{claim_id}:{source_id}"
+                    )
+                coverage = temporal["coverage_through"]
+                if coverage is None:
+                    errors.append(f"claim.temporal_coverage_missing:{claim_id}:{source_id}")
+                elif as_of is not None and coverage < as_of:
+                    errors.append(
+                        f"claim.temporal_coverage_before_as_of:{claim_id}:{source_id}"
+                    )
 
         if boundary in {"FACT", "SINGLE_SOURCE", "INFERENCE", "NO_RESULT"} and not known_sources:
             errors.append(f"claim.sources_required:{claim_id}")

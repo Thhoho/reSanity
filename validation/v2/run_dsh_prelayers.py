@@ -183,7 +183,7 @@ def run_session(
         stderr = error.stderr if isinstance(error.stderr, str) else ""
         stderr += f"\nrunner timeout after {args.max_wall_seconds}s\n"
     wall_seconds = round(time.monotonic() - started, 3)
-    (artifact / "report.md").write_text(stdout, encoding="utf-8")
+    (artifact / "stdout.md").write_text(stdout, encoding="utf-8")
     (artifact / "stderr.log").write_text(stderr, encoding="utf-8")
     (artifact / "exit-code").write_text(f"{exit_code}\n", encoding="utf-8")
 
@@ -204,7 +204,16 @@ def run_session(
         failures.append("dsh_exit_code")
     if len(sessions) != 1:
         failures.append("raw_session_count")
-    failures.extend(DSH.report_delivery_failures(stdout))
+    report_failures = DSH.report_delivery_failures(stdout)
+    failures.extend(report_failures)
+    report_present = not report_failures
+    recovered_report = None
+    if report_present:
+        (artifact / "report.md").write_text(stdout, encoding="utf-8")
+    else:
+        recovered_report = DSH.recover_workspace_report(
+            workspace, artifact / "recovered-report.md"
+        )
     if metrics:
         expected = {
             "provider": args.expected_provider,
@@ -278,6 +287,7 @@ def run_session(
             "host_retry_events": metrics.get("host_retry_events"),
             "timed_out": timed_out,
             "session_artifacts": len(sessions),
+            "recovered_report": recovered_report,
         },
     }
     BASE.write_json(artifact / "host-receipt.json", host_receipt)
@@ -287,6 +297,8 @@ def run_session(
         "profile": case.get("profile"),
         "mode": case.get("mode"),
         "host_complete": not failures,
+        "report_present": report_present,
+        "recovered_report": recovered_report is not None,
         "semantic_review": "NOT_REVIEWED",
         "resanity_invocations": invocations,
         "source_files": source_count,

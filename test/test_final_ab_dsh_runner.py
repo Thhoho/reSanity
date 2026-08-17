@@ -12,6 +12,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER_PATH = ROOT / "validation/v2/run_final_ab_dsh.py"
+PRELAYER_PATH = ROOT / "validation/v2/run_dsh_prelayers.py"
 
 
 def load_runner():
@@ -23,10 +24,20 @@ def load_runner():
     return module
 
 
+def load_prelayer():
+    spec = importlib.util.spec_from_file_location("resanity_dsh_prelayers", PRELAYER_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("cannot load DSH prelayer runner")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 class DshFinalAbRunnerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.runner = load_runner()
+        cls.prelayer = load_prelayer()
 
     def make_profile_pair(self, raw: str) -> SimpleNamespace:
         root = Path(raw)
@@ -227,6 +238,90 @@ class DshFinalAbRunnerTests(unittest.TestCase):
         self.assertEqual(
             self.runner.report_delivery_failures("  \n"), ["report_missing"]
         )
+
+    def test_report_delivery_shape_rejects_process_only_stdout(self) -> None:
+        process_only = (
+            "Budget check: active-research cap reached; one remaining call is "
+            "reserved for the required deliverable write."
+        )
+        self.assertEqual(
+            self.runner.report_delivery_failures(process_only),
+            ["report_process_only"],
+        )
+
+    def test_workspace_report_is_recovered_without_becoming_host_success(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            workspace = root / "workspace"
+            workspace.mkdir()
+            (workspace / "REPORT.md").write_text(
+                "# 根结论\n\n证据不足。\n", encoding="utf-8"
+            )
+            destination = root / "artifacts" / "recovered-report.md"
+            recovered = self.runner.recover_workspace_report(workspace, destination)
+            self.assertIsNotNone(recovered)
+            self.assertTrue(destination.is_file())
+            self.assertEqual(recovered["path"], "recovered-report.md")
+            self.assertEqual(
+                recovered["sha256"], self.runner.BASE.sha256_file(destination)
+            )
+
+    def test_prelayer_failure_recovers_report_but_stays_host_incomplete(self) -> None:
+        process_only = (
+            "Budget check: active-research cap reached; one remaining call is "
+            "reserved for the required deliverable write."
+        )
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            output = root / "output"
+            workspace = output / "workspaces" / "Q01"
+            artifact = output / "cases" / "Q01"
+            args = SimpleNamespace(
+                output=output,
+                dsh_bin="unused-dsh",
+                dsh_home=root / "dsh-home",
+                candidate_profile="headless-resanity",
+                max_tool_calls=30,
+                max_web_searches=15,
+                max_non_cached_input_tokens=150_000,
+                max_wall_seconds=900,
+                zstd_bin="unused-zstd",
+                expected_provider="deepseek-official",
+                expected_model="deepseek-v4-pro",
+                expected_reasoning_effort="max",
+            )
+
+            def failed_run(*_args, **kwargs):
+                cwd = Path(kwargs["cwd"])
+                (cwd / "REPORT.md").write_text(
+                    "# 根结论\n\n已交付可读报告。\n", encoding="utf-8"
+                )
+                return SimpleNamespace(returncode=1, stdout=process_only, stderr="quota")
+
+            with mock.patch.object(
+                self.prelayer.subprocess, "run", side_effect=failed_run
+            ):
+                row = self.prelayer.run_session(
+                    args=args,
+                    case={
+                        "id": "Q01",
+                        "layer": "core_contract",
+                        "profile": "core",
+                        "mode": "closed",
+                    },
+                    prompt="frozen prompt",
+                    workspace=workspace,
+                    artifact=artifact,
+                )
+
+            self.assertFalse(row["host_complete"])
+            self.assertFalse(row["report_present"])
+            self.assertTrue(row["recovered_report"])
+            self.assertIn("dsh_exit_code", row["mechanical_failures"])
+            self.assertIn("report_process_only", row["mechanical_failures"])
+            self.assertTrue((artifact / "stdout.md").is_file())
+            self.assertFalse((artifact / "report.md").exists())
+            self.assertTrue((artifact / "recovered-report.md").is_file())
 
 
 if __name__ == "__main__":

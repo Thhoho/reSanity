@@ -34,7 +34,8 @@ python3 <skill-root>/tools/skill_identity.py \
 
 - 报告、来源快照和提示的路径/hash；
 - 主张与来源引用；
-- 来源 publisher、发布日期、kind 和上游 lineage key；
+- 来源 publisher、kind、上游 lineage key、时态依据及覆盖截止日；
+- 主张时态 `EVENT_BY_DATE` / `STATE_AT_AS_OF` / `ABSENCE_BY_AS_OF` / `TIMELESS`；
 - as-of 与预先声明的预算上限；
 - 实际加载 locator 与方法/profile hash。
 
@@ -53,6 +54,13 @@ python3 <skill-root>/tools/research_check.py <receipt.json> \
 `AUDIT_RECEIPT_OK` 只表示机械合同闭合。它不表示事实正确、研究有效、存在 Alpha、适合交易或达到 PMF。
 
 ## 证据机械字段
+
+来源必须声明 `temporal_basis`：`DATED_PUBLICATION`、`VERSIONED_ARTIFACT`、`ARCHIVED_SNAPSHOT`、`LIVE_CURRENT` 或 `UNKNOWN`。前三者必须用 `date_evidence` 记录可回查的日期值与快照锚点；状态或未发现主张还必须用 `coverage_through` 声明来源实际覆盖到哪一天。机械检查只验证字段、日期和兼容矩阵，不判断这些声明是否符合来源正文。
+
+- `EVENT_BY_DATE`：只接受 as-of 当日或之前的带日期发布、版本化原件或归档快照。
+- `STATE_AT_AS_OF` / `ABSENCE_BY_AS_OF`：不接受 `LIVE_CURRENT` 或 `UNKNOWN`，且要求 `coverage_through >= report.as_of`。
+- `TIMELESS`：不施加主张级时态兼容闸门。
+- `INSUFFICIENT`：可不引用来源，但必须写明 gap；不得为了形式完整而接受时态不合格来源。
 
 - `FACT`：声明一手/原始来源，或至少两个不同上游血缘。
 - `SINGLE_SOURCE`：只有一个上游血缘，无论有多少转载页面。

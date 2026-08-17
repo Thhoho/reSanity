@@ -1,7 +1,7 @@
 {
   "name": "resanity",
-  "description": "Resanity v2：原子主张证据研究 Skill 与可选 DeepSeek Harness 机械外壳",
-  "version": "2.0.0-rc.2",
+  "description": "Resanity 0.2：原子主张证据研究 Skill 与可选 DeepSeek Harness 机械外壳",
+  "version": "0.2.0",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

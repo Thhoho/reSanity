@@ -474,6 +474,17 @@ TOOL_PROTOCOL_MARKERS = (
     "<|tool_calls|>",
     "<|invoke",
 )
+PROCESS_ONLY_MARKERS = (
+    "Budget check:",
+    "active-research cap",
+    "remaining call",
+    "required deliverable write",
+    "budget limit",
+    "write failed",
+    "预算已接近上限",
+    "不再重试",
+)
+REPORT_CONTENT_MARKERS = ("#", "[C", "根结论", "一句话结论", "主张：")
 
 
 def report_delivery_failures(report: str) -> list[str]:
@@ -482,7 +493,33 @@ def report_delivery_failures(report: str) -> list[str]:
         return ["report_missing"]
     if any(marker in report for marker in TOOL_PROTOCOL_MARKERS):
         return ["report_tool_protocol_leak"]
+    process_markers = sum(marker in report for marker in PROCESS_ONLY_MARKERS)
+    if (
+        len(report) < 1000
+        and process_markers >= 2
+        and not any(marker in report for marker in REPORT_CONTENT_MARKERS)
+    ):
+        return ["report_process_only"]
     return []
+
+
+def recover_workspace_report(workspace: Path, destination: Path) -> dict[str, Any] | None:
+    """Preserve a workspace report without converting a failed host delivery to success."""
+    source = workspace / "REPORT.md"
+    if not source.is_file():
+        return None
+    try:
+        content = source.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return None
+    if not content.strip():
+        return None
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+    return {
+        "path": destination.name,
+        "sha256": BASE.sha256_file(destination),
+    }
 
 
 def parse_dsh_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
@@ -741,11 +778,21 @@ def run_one(
         skills = skill_names(events)
 
     report_failures = report_delivery_failures(stdout)
-    report_present = "report_missing" not in report_failures
+    report_present = not report_failures
+    recovered_report = None
     if report_present:
         report_path = operator_dir / "report.md"
         report_path.write_text(stdout, encoding="utf-8")
         shutil.copy2(report_path, review_dir / "report.md")
+    else:
+        recovered_report = recover_workspace_report(
+            workspace, operator_dir / "recovered-report.md"
+        )
+        if recovered_report is not None:
+            shutil.copy2(
+                operator_dir / "recovered-report.md",
+                review_dir / "recovered-report.md",
+            )
     sources = BASE.copy_sources(workspace, operator_dir, review_dir)
 
     host_receipt = {
@@ -792,6 +839,7 @@ def run_one(
             "malformed_jsonl_lines": metrics.get("malformed_jsonl_lines"),
             "timed_out": timed_out,
             "session_artifacts": len(sessions),
+            "recovered_report": recovered_report,
         },
     }
     BASE.write_json(operator_dir / "host-receipt.json", host_receipt)
@@ -843,6 +891,7 @@ def run_one(
         "exit_code": exit_code,
         "artifact_complete": not failures,
         "report_present": report_present,
+        "recovered_report": recovered_report is not None,
         "source_files": sources,
         "resanity_invocations": resanity_invocations,
         "mechanical_failures": failures,

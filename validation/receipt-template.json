@@ -42,8 +42,15 @@
       "source_id": "E1",
       "locator": "https://example.com/primary-source",
       "publisher": "<publisher>",
+      "temporal_basis": "DATED_PUBLICATION",
       "published_at": "2026-08-15",
       "retrieved_at": "2026-08-16",
+      "coverage_through": "2026-08-15",
+      "date_evidence": {
+        "kind": "DOCUMENT_DATE",
+        "value": "2026-08-15",
+        "anchor": "<snapshot heading, metadata field, or line reference>"
+      },
       "lineage_key": "<upstream-origin:stable-id>",
       "kind": "PRIMARY",
       "snapshot_path": "sources/E1.txt",
@@ -54,6 +61,7 @@
     {
       "claim_id": "C1",
       "boundary": "FACT",
+      "temporal_mode": "EVENT_BY_DATE",
       "source_ids": ["E1"]
     }
   ]

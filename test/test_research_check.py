@@ -7,6 +7,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 
+from tools.research_check import ROOT as REPO_ROOT
 from tools.research_check import main, sha256_file, validate_receipt
 from tools.skill_identity import file_locator, profile_identity
 
@@ -98,8 +99,15 @@ class ResearchCheckTests(unittest.TestCase):
                     "source_id": "E1",
                     "locator": "https://example.com/filing",
                     "publisher": "Example Exchange",
+                    "temporal_basis": "DATED_PUBLICATION",
                     "published_at": "2026-08-13",
                     "retrieved_at": "2026-08-14",
+                    "coverage_through": "2026-08-14",
+                    "date_evidence": {
+                        "kind": "DOCUMENT_DATE",
+                        "value": "2026-08-13",
+                        "anchor": "official filing heading",
+                    },
                     "lineage_key": "example-exchange:filing-1",
                     "kind": "PRIMARY",
                     "snapshot_path": "sources/E1.txt",
@@ -107,7 +115,12 @@ class ResearchCheckTests(unittest.TestCase):
                 }
             ],
             "claims": [
-                {"claim_id": "C1", "boundary": "FACT", "source_ids": ["E1"]}
+                {
+                    "claim_id": "C1",
+                    "boundary": "FACT",
+                    "temporal_mode": "EVENT_BY_DATE",
+                    "source_ids": ["E1"],
+                }
             ],
         }
 
@@ -201,6 +214,7 @@ class ResearchCheckTests(unittest.TestCase):
         self.receipt["claims"][0] = {
             "claim_id": "C1",
             "boundary": "NO_RESULT",
+            "temporal_mode": "ABSENCE_BY_AS_OF",
             "source_ids": ["E1"],
             "no_result": {
                 "queries": ["company pledge announcements"],
@@ -210,6 +224,116 @@ class ResearchCheckTests(unittest.TestCase):
             },
         }
         self.assertEqual(self.validate(strict=True), ([], []))
+
+    def test_o01_live_current_replay_fails_temporal_gate(self) -> None:
+        source = self.receipt["sources"][0]
+        source.update(
+            {
+                "temporal_basis": "LIVE_CURRENT",
+                "published_at": None,
+                "retrieved_at": "2026-08-17",
+                "coverage_through": None,
+            }
+        )
+        self.receipt["claims"][0]["temporal_mode"] = "STATE_AT_AS_OF"
+        errors, _ = self.validate()
+        self.assertIn("source.live_current_after_as_of:E1", errors)
+        self.assertIn("claim.temporal_source_ineligible:C1:E1", errors)
+        self.assertIn("claim.temporal_coverage_missing:C1:E1", errors)
+
+    def test_o02_dated_notice_replay_passes(self) -> None:
+        self.receipt["claims"][0]["temporal_mode"] = "STATE_AT_AS_OF"
+        self.assertEqual(self.validate(strict=True), ([], []))
+
+    def test_state_source_must_cover_as_of(self) -> None:
+        self.receipt["claims"][0]["temporal_mode"] = "STATE_AT_AS_OF"
+        self.receipt["sources"][0]["coverage_through"] = "2026-08-13"
+        errors, _ = self.validate()
+        self.assertIn("claim.temporal_coverage_before_as_of:C1:E1", errors)
+
+    def test_absence_cannot_use_current_index(self) -> None:
+        self.receipt["sources"][0].update(
+            {
+                "kind": "INDEX",
+                "temporal_basis": "LIVE_CURRENT",
+                "published_at": None,
+            }
+        )
+        self.receipt["claims"][0]["temporal_mode"] = "ABSENCE_BY_AS_OF"
+        errors, _ = self.validate()
+        self.assertIn("claim.temporal_source_ineligible:C1:E1", errors)
+
+    def test_insufficient_without_temporally_qualified_source_passes(self) -> None:
+        self.receipt["sources"] = []
+        self.receipt["claims"][0] = {
+            "claim_id": "C1",
+            "boundary": "INSUFFICIENT",
+            "temporal_mode": "STATE_AT_AS_OF",
+            "source_ids": [],
+            "gap": "No dated source covering the report as-of was found.",
+        }
+        self.report.write_text(
+            "# 报告\n\n截止日：2026-08-14\n\n[C1] 状态证据不足。\n",
+            encoding="utf-8",
+        )
+        self.receipt["report"]["sha256"] = sha256_file(self.report)
+        self.assertEqual(self.validate(strict=True), ([], []))
+
+    def test_temporal_basis_and_mode_are_required(self) -> None:
+        self.receipt["sources"][0].pop("temporal_basis")
+        self.receipt["claims"][0].pop("temporal_mode")
+        errors, _ = self.validate()
+        self.assertIn("source.temporal_basis_missing:E1", errors)
+        self.assertIn("claim.temporal_mode_invalid:C1", errors)
+
+    def test_repository_formal_audit_identity_runs_positive_and_o01_negative(self) -> None:
+        repo_skill = REPO_ROOT / "SKILL.md"
+        formal_profile = profile_identity(REPO_ROOT, "formal-audit")
+        self.receipt["method"] = {
+            "canonical_skill_sha256": sha256_file(repo_skill),
+            "profile": {
+                "name": "formal-audit",
+                "sha256": formal_profile["sha256"],
+            },
+            "active": {
+                "locator": file_locator(repo_skill),
+                "skill_sha256": sha256_file(repo_skill),
+                "profile_sha256": formal_profile["sha256"],
+            },
+        }
+        self.receipt["claims"][0]["temporal_mode"] = "STATE_AT_AS_OF"
+        self.receipt_path.write_text(
+            json.dumps(self.receipt, ensure_ascii=False), encoding="utf-8"
+        )
+        self.assertEqual(
+            validate_receipt(
+                self.receipt,
+                receipt_path=self.receipt_path,
+                skill_path=repo_skill,
+                active_skill_path=repo_skill,
+                strict=True,
+            ),
+            ([], []),
+        )
+
+        self.receipt["sources"][0].update(
+            {
+                "temporal_basis": "LIVE_CURRENT",
+                "published_at": None,
+                "retrieved_at": "2026-08-17",
+                "coverage_through": None,
+            }
+        )
+        errors, _ = validate_receipt(
+            self.receipt,
+            receipt_path=self.receipt_path,
+            skill_path=repo_skill,
+            active_skill_path=repo_skill,
+            strict=True,
+        )
+        self.assertIn("source.live_current_after_as_of:E1", errors)
+        self.assertIn("claim.temporal_source_ineligible:C1:E1", errors)
+        self.assertIn("claim.temporal_coverage_missing:C1:E1", errors)
 
     def test_report_hash_and_markers_are_bound(self) -> None:
         self.receipt["report"]["sha256"] = "0" * 64

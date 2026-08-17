@@ -2,8 +2,10 @@
 
 > 当前结果：`2.0.0-rc.1` 的 8 案例 DSH A/B 已完成，三角色盲化 AI 合议为
 > `MEETS_LIMITED_AB_LINE_BY_THREE_ROLE_AI_PANEL`，但不是 clean pass；方法状态仍为
-> `UNBENCHMARKED_CURRENT`。`2.0.0-rc.2` 已改变方法 identity，尚无新的同 hash 行为成绩。
-> 本目录不把 v1 结果或 RC1 结果迁移成 RC2 成绩。
+> `UNBENCHMARKED_CURRENT`。正式 `0.2.0` 与预发布候选 `2.0.0-rc.3` 共享同一 Skill/profile identity，
+> 该 identity 的 C03/O01/O02/O03 定向 DSH 前向验证为 4/4 通过；
+> 该结果不是完整同 hash A/B 或 stable 发布门槛。
+> 本目录不把 v1、RC1 或 RC2 结果迁移成 0.2.0 成绩。
 
 2026-08-16 的 Codex 迭代预检及失败证据保存在 [runs/2026-08-16-iterative-preflight/](runs/2026-08-16-iterative-preflight/README.md)。该批产物跨多个候选 hash，只用于定位和收敛架构，不是冻结候选成绩。
 
@@ -12,6 +14,10 @@
 三位评审是空白上下文的独立 AI 角色，不是独立人类；该结果不证明广泛研究有效、Alpha、PMF 或 stable 发布就绪。
 RC2 的四项窄修复、机械验证和 fresh DSH 未运行边界记录在
 [runs/2026-08-16-rc2-targeted-repair/](runs/2026-08-16-rc2-targeted-repair/README.md)。
+RC2 后续冻结定向 DSH 集合的累计语义结果为 3/4；O01 的时态来源失败记录在
+[runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/](runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/README.md)。
+0.2.0 同 identity 预发布候选的机械收据、逐案语义复核和发布边界记录在
+[runs/2026-08-17-rc3-targeted-dsh/](runs/2026-08-17-rc3-targeted-dsh/README.md)。
 `suite.json` 保持为未预填结果的可复用协议模板，因此其中的 `result_status` 仍是
 `NOT_RUN`；具体运行状态只写入带日期、identity 与证据绑定的 `runs/` 记录。
 

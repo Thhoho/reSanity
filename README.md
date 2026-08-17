@@ -4,10 +4,10 @@
 
 Resanity 是一个证据研究 Skill：把会改变决策的判断拆成“观察到什么、可以推出什么、不能推出什么、对决策有什么影响”。模型保留全部研究语义；代码只做 hash、引用、as-of、来源血缘、预算和安装身份等机械检查。
 
-当前代码版本是 **`2.0.0-rc.2`**，发布通道为 release candidate；当前方法状态仍是
+当前正式代码版本是 **`0.2.0`**；当前方法状态仍是
 **`UNBENCHMARKED_CURRENT`**。测试通过或有限 A/B 达线不等于研究有效，不证明 Alpha、收益或 PMF。
 
-## v2 有什么变化
+## 0.2 有什么变化
 
 - 保留一个 canonical `resanity` Skill；
 - `SKILL.md` 只放通用原子主张协议和路由；
@@ -16,6 +16,7 @@ Resanity 是一个证据研究 Skill：把会改变决策的判断拆成“观�
 - 回答按问题选择模块，不强制每次生成完整报告；
 - 锚使用 `active / refuted / realized / archived` 生命周期，代码只读和提醒；
 - 正式验证绑定 active locator、canonical Skill hash 与 profile hash，防止验证 A、实际加载 B。
+- 正式收据显式绑定主张时态、来源日期依据和覆盖截止日，阻断事后当前页回填历史状态。
 
 完整边界见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
@@ -98,7 +99,7 @@ python3 tools/research_check.py path/to/report.receipt.json \
 `cordis.patch.yml` 只激活 Resanity，不组合场景或其他插件：
 
 ```sh
-dsh plugin --profile headless add /absolute/path/resanity-2.0.0-rc.2.tgz
+dsh plugin --profile headless add /absolute/path/resanity-0.2.0.tgz
 ```
 
 安装成功后 `resanity` 应自动追加到该 profile 的 `dsh.profile.bundles`；不需要手工编辑
@@ -119,9 +120,11 @@ v2 分层为 core contract、investing profile、open network、anchor、trigger
 `2.0.0-rc.1` 在 2026-08-16 的 8 案例 DSH A/B 中经三角色盲化 AI 合议以 6:2 达到有限数值线，
 但不是 clean pass；四项已知缺陷和适用边界见
 [`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)。
-`2.0.0-rc.2` 针对四项缺陷做了窄修复，并完成工程、身份、打包与旧失败形态重放；新的同 hash DSH 行为验证尚未运行，
-因此 RC1 的 6:2 不迁移为 RC2 成绩，RC2 也不标记 stable。记录见
-[`validation/v2/runs/2026-08-16-rc2-targeted-repair/`](validation/v2/runs/2026-08-16-rc2-targeted-repair/README.md)。
+`2.0.0-rc.2` 的冻结定向 DSH 集合中 C03、O02、O03 通过，O01 因用事后当前页回填历史状态而失败（3/4）；
+该失败促成预发布候选 `2.0.0-rc.3` 的主张/来源时态资格闸门与失败报告保全修复。该候选的 C03/O01/O02/O03
+定向 DSH 前向验证为 4/4 机械完成且语义通过；正式 `0.2.0` 保持相同 Skill/profile identity，只调整发布版本与说明。
+这是定向修复线，不是完整 A/B 或方法 stable 门槛。记录见
+[`validation/v2/runs/2026-08-17-rc3-targeted-dsh/`](validation/v2/runs/2026-08-17-rc3-targeted-dsh/README.md)。
 8 案例 DSH headless 采集器入口为 `npm run validate:v2:ab:dsh -- --help`；其 dry-run
 会先核对 B/R profile 差异、active Skill/profile hash、宿主 patch 与前六层收据，具体参数见
 `validation/v2/README.md`。
