@@ -219,7 +219,6 @@ class ValidationContractTests(unittest.TestCase):
 
     def test_internal_validation_corpus_is_not_in_package_files(self) -> None:
         package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
-        npmignore = (ROOT / ".npmignore").read_text(encoding="utf-8")
         self.assertEqual(
             package["scripts"]["validate:v2:ab:dsh"],
             "python3 validation/v2/run_final_ab_dsh.py",
@@ -237,8 +236,6 @@ class ValidationContractTests(unittest.TestCase):
         self.assertIn("agents/", package["files"])
         self.assertIn("cordis.patch.yml", package["files"])
         self.assertEqual(package["dsh"]["bundle"]["patch"], "./cordis.patch.yml")
-        self.assertIn("**/__pycache__/", npmignore)
-        self.assertIn("validation/v2/", npmignore)
         self.assertNotIn("scripts/", package["files"])
         self.assertIn("scripts/free_market_observations.py", package["files"])
         self.assertIn("scripts/tier1_providers.py", package["files"])

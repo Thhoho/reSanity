@@ -186,7 +186,11 @@ const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
 	assert.equal(manifest.dsh.bundle.patch, "./cordis.patch.yml");
 	assert.ok(manifest.files.includes("cordis.patch.yml"));
 	const activation = await readFile(new URL("../cordis.patch.yml", import.meta.url), "utf8");
-	assert.equal(activation, "- insert:\n    - id: resanity\n      name: resanity\n");
+	assert.equal(
+		activation,
+		"# Keep the bundled patch limited to Skill activation; host profiles own scenario composition.\n" +
+			"- insert:\n    - id: resanity\n      name: resanity\n",
+	);
 
 	const prompt = await readFile(
 		new URL("./fixtures/unreadable-decision.md", import.meta.url),
