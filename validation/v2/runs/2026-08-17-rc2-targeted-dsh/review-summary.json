@@ -108,5 +108,15 @@
     }
   ],
   "release_boundary": "RC2 remains a local release candidate. The targeted run is not a four-case pass, stable-release gate, final A/B, or broad effectiveness claim.",
-  "next_step": "Do not rerun automatically. Restore provider balance before a fresh frozen-identity run of O01 and O02; any candidate change requires a new identity."
+  "next_step": "Provider balance was restored and an explicitly authorized fresh O01/O02 rerun completed under the same identity. See ../2026-08-17-rc2-targeted-dsh-rerun-o01-o02/review-summary.json.",
+  "follow_up_run": {
+    "status": "TARGETED_RERUN_ONE_PASS_ONE_FAIL",
+    "path": "../2026-08-17-rc2-targeted-dsh-rerun-o01-o02/review-summary.json",
+    "semantic_pass_cases": [
+      "O02-policy-outcome"
+    ],
+    "semantic_fail_cases": [
+      "O01-product-passkey"
+    ]
+  }
 }

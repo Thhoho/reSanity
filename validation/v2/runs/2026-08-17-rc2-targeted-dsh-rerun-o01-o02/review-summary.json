@@ -1,0 +1,90 @@
+{
+  "schema_version": "resanity.rc2-targeted-dsh-rerun-review.v1",
+  "status": "TARGETED_RERUN_ONE_PASS_ONE_FAIL",
+  "method_status": "UNBENCHMARKED_CURRENT",
+  "stable_release_authorized": false,
+  "final_ab_authorized": false,
+  "candidate_skill_sha256": "0704f56286ad6de61ba9c6e1954fb7b38a0c0a8e02f22bfc1ede5422a857c381",
+  "candidate_profiles_sha256": {
+    "core": "76c184f2f873a975b0327b15288ae483600fd66b3000214966741647fc2838da",
+    "investing": "3a1f7f9f8d2b5ae695753efd011738cf24acf4841e599756fd79a53cd1895de8",
+    "anchors": "71e0097037831ef836841242f3e57931d0af6cb28f1b3d0ccfb351728ad80faa",
+    "formal-audit": "f1e7997e21fd5fab6625b52d1cabb1dee4324cbecaa8b1360f59f03ced61b3aa"
+  },
+  "host": {
+    "adapter": "dsh-headless",
+    "version": "0.1.0-rc.6",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-pro",
+    "reasoning_effort": "max",
+    "concurrency": 2
+  },
+  "collection": {
+    "root": "/private/tmp/resanity-v2-rc2-dsh-rerun.Ocg4UL/targeted",
+    "summary_sha256": "2988abf65b8da9ef002eedf27fa1df92f8386f0cbceb34220b8b40cf21c6e669",
+    "manifest_sha256": "ef13f19ae71c196fce01b987e307eeb45ee9303aece8a59cdf47cf220218b0c9",
+    "completed_sessions": 2,
+    "expected_sessions": 2,
+    "automatic_retries": 0,
+    "status": "HOST_COLLECTION_COMPLETE_AWAITING_SEMANTIC_REVIEW"
+  },
+  "cases": [
+    {
+      "id": "O01-product-passkey",
+      "mechanical": "PASS",
+      "semantic": "FAIL",
+      "wall_seconds": 831.386,
+      "tool_executions": 30,
+      "tool_attempts": 30,
+      "budget_denials": 0,
+      "source_files": 27,
+      "report_sha256": "55950aa79471720785ac90ddd1565a3041400f4b7b82e05cdedb8afa10b3937d",
+      "host_receipt_sha256": "2274c028713d055fe4ca2e3938783dfa312f059923cb54db20e7d5e41d95a571",
+      "raw_session_sha256": "1e6a18dc5db7a37dbcf4a91ea307828e3a73142576c9bc7773fdbd485392e21d",
+      "blocking_findings": [
+        "Apple and Microsoft live product documents captured on 2026-08-17 are used as direct evidence for the 2026-07-31 recovery and platform state without a dated pre-as-of version or archive.",
+        "A FIDO specification index captured after as-of is used to infer the absence and status of cross-provider migration specifications at as-of.",
+        "The report discloses the late snapshots but still backfills historical product status, violating the task's explicit source boundary."
+      ],
+      "non_blocking_findings": [
+        "The universal friction-elimination claim is independently rejected by dated primary deployment data: 93 percent eligible, 36 percent enrolled, and 26 percent of sign-ins using passkeys.",
+        "The report separates availability, coverage, adoption, recovery, and support cost, and gives exactly one next validation."
+      ]
+    },
+    {
+      "id": "O02-policy-outcome",
+      "mechanical": "PASS",
+      "semantic": "PASS",
+      "wall_seconds": 573.389,
+      "tool_executions": 30,
+      "tool_attempts": 30,
+      "budget_denials": 0,
+      "source_files": 15,
+      "report_sha256": "b3355fb2556de770f90d8cd51742d3cda83d3511edbf6fedad351bce2c4a1229",
+      "host_receipt_sha256": "f49705d3a68ffff6669135e6721e14195e57e2b957749d6657b97996869899dc",
+      "raw_session_sha256": "bb601b2b7ecb2befcb229d6c88aa364aca23ed2876264fa2feadf0c9d9dbf076",
+      "findings": [
+        "DOE Program Notices 26-1, 26-2, and 26-3 are dated effective 2026-05-29 and directly describe launched, not-yet-launched, and conditional-award jurisdictions.",
+        "The dated scope evidence supports rejection of the nationwide-completion claim without relying on official silence.",
+        "Missing issuance and installation results remain INSUFFICIENT, and the report gives exactly one next validation."
+      ],
+      "non_blocking_findings": [
+        "The cited preliminary US Code pages were captured after as-of, but the decisive nationwide-scope finding is independently supported by dated DOE notices."
+      ]
+    }
+  ],
+  "combined_targeted_result": {
+    "status": "TARGETED_VALIDATION_FAIL_3_OF_4_SEMANTIC_PASS",
+    "same_frozen_identity": true,
+    "semantic_pass_cases": [
+      "C03-technical-debug",
+      "O02-policy-outcome",
+      "O03-investing-exposure"
+    ],
+    "semantic_fail_cases": [
+      "O01-product-passkey"
+    ]
+  },
+  "release_boundary": "RC2 remains a local release candidate. The cumulative targeted result is not a stable-release gate, final A/B, or broad effectiveness claim.",
+  "next_step": "Do not rerun automatically. A source-boundary repair for current or undated product pages creates a new candidate identity and requires a fresh O01 forward-test."
+}

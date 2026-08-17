@@ -1,6 +1,6 @@
 {
   "schema_version": "resanity.rc-targeted-repair.v1",
-  "status": "RC2_ENGINEERING_RELEASE_READY_TARGETED_VALIDATION_PARTIAL",
+  "status": "RC2_LOCAL_RELEASE_CANDIDATE_TARGETED_VALIDATION_FAIL",
   "version": "2.0.0-rc.2",
   "base_commit": "45cc0db7db87614b69e552d356aeedc68546d64f",
   "branch": "codex/resanity-v2-rc2",
@@ -30,7 +30,7 @@
     "package_dry_run": "PASS_27_FILES"
   },
   "fresh_behavior_validation": {
-    "status": "PARTIAL_EXTERNAL_QUOTA",
+    "status": "COMPLETE_3_OF_4_SEMANTIC_PASS",
     "run_date": "2026-08-17",
     "collection_root": "/private/tmp/resanity-v2-rc2-dsh.t5F3nz/targeted",
     "collection_summary_sha256": "1f3810e2fde142c2dd9691dcc35d4a1b28b5072a7586a0c5d4d1c78a64d03a7b",
@@ -45,14 +45,37 @@
     "external_sessions_started": 4,
     "host_complete_sessions": 2,
     "external_quota_incomplete_sessions": 2,
-    "semantic_pass_cases": [
+    "initial_run_semantic_pass_cases": [
       "C03-technical-debug",
       "O03-investing-exposure"
     ],
-    "not_accepted_or_evaluable_cases": [
+    "initial_run_not_accepted_or_evaluable_cases": [
       "O01-product-passkey",
       "O02-policy-outcome"
+    ],
+    "authorized_rerun": {
+      "status": "TARGETED_RERUN_ONE_PASS_ONE_FAIL",
+      "collection_root": "/private/tmp/resanity-v2-rc2-dsh-rerun.Ocg4UL/targeted",
+      "collection_summary_sha256": "2988abf65b8da9ef002eedf27fa1df92f8386f0cbceb34220b8b40cf21c6e669",
+      "run_manifest_sha256": "ef13f19ae71c196fce01b987e307eeb45ee9303aece8a59cdf47cf220218b0c9",
+      "automatic_retries": 0,
+      "external_sessions_started": 2,
+      "host_complete_sessions": 2,
+      "semantic_pass_cases": [
+        "O02-policy-outcome"
+      ],
+      "semantic_fail_cases": [
+        "O01-product-passkey"
+      ]
+    },
+    "combined_semantic_pass_cases": [
+      "C03-technical-debug",
+      "O02-policy-outcome",
+      "O03-investing-exposure"
+    ],
+    "combined_semantic_fail_cases": [
+      "O01-product-passkey"
     ]
   },
-  "release_boundary": "Local RC2 commit and tarball only; no stable tag, push, publish, DSH live install, or effectiveness claim."
+  "release_boundary": "Local RC2 commit and tarball only; targeted semantic result is 3/4 and blocks stable promotion. No stable tag, push, publish, DSH live install, or effectiveness claim."
 }

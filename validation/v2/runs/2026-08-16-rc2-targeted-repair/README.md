@@ -1,6 +1,6 @@
 # Resanity 2.0.0-rc.2 targeted repair
 
-Status: `RC2_ENGINEERING_RELEASE_READY_TARGETED_VALIDATION_PARTIAL`. Method status remains
+Status: `RC2_LOCAL_RELEASE_CANDIDATE_TARGETED_VALIDATION_FAIL`. Method status remains
 `UNBENCHMARKED_CURRENT`.
 
 ## Scope
@@ -43,6 +43,8 @@ O03 completed and passed manual semantic review. O01 and O02 ended after DeepSee
 did not complete terminal host delivery. See `../2026-08-17-rc2-targeted-dsh/` for the bound hashes
 and review.
 
-Therefore RC1's 6:2 result remains historical evidence for RC1 only, and the new RC2 run is a
-partial targeted result rather than a four-case pass. RC2 is a local release candidate, not a stable
-release and not a claim of broad research effectiveness, Alpha, or PMF.
+After an explicitly authorized same-identity rerun, O02 passed and O01 failed its as-of source
+boundary. The cumulative RC2 targeted result is C03/O02/O03 pass and O01 fail: 3/4 semantic
+passes. RC2 is a local release candidate, not a stable release and not a claim of broad research
+effectiveness, Alpha, or PMF. See
+`../2026-08-17-rc2-targeted-dsh-rerun-o01-o02/` for the rerun receipt.

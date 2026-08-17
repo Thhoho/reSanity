@@ -39,3 +39,12 @@ The result validates two targeted behaviors but is not a four-case pass, a
 stable-release gate, a final A/B, or evidence of broad research effectiveness.
 RC2 remains a local release candidate; no tag, push, publish, or automatic
 rerun occurred.
+
+## Authorized follow-up
+
+After the operator restored DeepSeek balance, O01 and O02 were rerun in fresh
+sessions under the same frozen identity. Both were mechanically complete. O02
+passed semantic review; O01 failed because it used live product pages and a
+specification index captured after as-of as historical evidence. The cumulative
+targeted result is therefore 3/4 semantic passes. See
+`../2026-08-17-rc2-targeted-dsh-rerun-o01-o02/`.
