@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-reSanity 1.0 — Tier-1 Structured Data Providers (citable hard anchors)
+"""Fetch bounded structured observations with citable source URLs.
 
-The empirical finding: the old DDG-regex "verified_crawler" returns UNAVAILABLE for
-tenders/SMM/customs, so the system is de-facto WebSearch-driven for qualitative evidence.
-The right split is two tiers:
-  * Tier-2 = WebSearch (robust, broad, carries URLs)  -> handled by the sub-agents/judge.
-  * Tier-1 = API-backed structured feeds -> HARD, machine-readable, auto-citable anchors.
-
-This module adds Tier-1 sources that need NO API key and return primary-source URLs:
+Supported public sources:
   * FRED   (St. Louis Fed) — macro time series via no-key fredgraph.csv
   * EDGAR  (SEC)           — US filings via data.sec.gov (UA header, no key)
   * Comtrade (UN)          — trade by HS code (public preview; graceful fallback if key-gated)
 
-Each OK result carries a `citation` = {claim, number, source, url, date} that drops straight
-into the crux ledger / References. Failures return an explicit UNAVAILABLE (never fake data).
+Each successful result carries a source URL and observation date. Failures return
+an explicit ``UNAVAILABLE`` result rather than fabricated data.
 """
 import os, sys, io, csv, json, urllib.request, urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +16,7 @@ try:
 except Exception:
     def clean_proxy_env(): pass
 
-UA = "reSanity/1.0.0 research (+https://github.com/Thhoho/reSanity)"
+UA = "Resanity research (+https://github.com/Thhoho/reSanity)"
 
 
 def _get(url, headers=None, timeout=12):
@@ -112,7 +105,7 @@ def comtrade_export(reporter_code, partner_code, hs_code, period):
 
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser(description="reSanity Tier-1 structured data providers")
+    ap = argparse.ArgumentParser(description="Resanity structured data providers")
     ap.add_argument("--fred", help="FRED series id, e.g. DGS10")
     ap.add_argument("--edgar", help="US ticker, e.g. NVDA"); ap.add_argument("--form", default="")
     ap.add_argument("--comtrade", nargs=4, metavar=("REPORTER", "PARTNER", "HS", "PERIOD"))

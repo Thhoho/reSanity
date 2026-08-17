@@ -33,7 +33,7 @@ EXPECTED_PACKAGE_FILES = {
     "scripts/free_market_observations.py",
     "tools/anchor_check.py",
 }
-FORBIDDEN_PACKAGE_PREFIXES = ("validation/v2/", "validation/dsh-pilot/", "validation/dsh-full/")
+FORBIDDEN_PACKAGE_PREFIXES = ("validation/v2/",)
 
 
 class ValidationError(ValueError):

@@ -189,7 +189,7 @@ const md = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
 	assert.equal(activation, "- insert:\n    - id: resanity\n      name: resanity\n");
 
 	const prompt = await readFile(
-		new URL("../validation/dsh-pilot/prompts/C04F-T-unreadable.md", import.meta.url),
+		new URL("./fixtures/unreadable-decision.md", import.meta.url),
 		"utf8",
 	);
 	assert.ok(prompt.includes("./decision-document.pdf"));

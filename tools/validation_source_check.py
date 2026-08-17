@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""Validate v1 preservation and the v2 validation source contract.
+"""Validate the current reusable validation source contract.
 
 This command does not invoke a model, score semantics, or create a pass result
-for any v2 validation layer.
+for any semantic validation layer.
 """
 from __future__ import annotations
 
-import hashlib
 import json
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -33,73 +31,17 @@ class ContractError(ValueError):
     pass
 
 
-def sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def git(*args: str) -> bytes:
-    result = subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, check=False
-    )
-    if result.returncode != 0:
-        raise ContractError(
-            f"git {' '.join(args)} failed: {result.stderr.decode('utf-8', errors='replace').strip()}"
-        )
-    return result.stdout
-
-
 def read_suite() -> dict[str, Any]:
     try:
         value = json.loads(SUITE_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ContractError(f"invalid v2 suite: {error}") from error
+        raise ContractError(f"invalid validation suite: {error}") from error
     if not isinstance(value, dict):
-        raise ContractError("v2 suite root must be an object")
+        raise ContractError("validation suite root must be an object")
     return value
 
 
-def validate_v1(suite: dict[str, Any]) -> dict[str, Any]:
-    baseline = suite.get("v1_baseline")
-    if not isinstance(baseline, dict):
-        raise ContractError("v1_baseline missing")
-    commit = baseline.get("commit")
-    paths = baseline.get("paths")
-    expected_skill_sha = baseline.get("skill_sha256")
-    if not isinstance(commit, str) or len(commit) != 40:
-        raise ContractError("v1 baseline commit invalid")
-    if not isinstance(paths, list) or not paths or any(not isinstance(p, str) for p in paths):
-        raise ContractError("v1 baseline paths invalid")
-    baseline_skill = git("show", f"{commit}:SKILL.md")
-    if sha256_bytes(baseline_skill) != expected_skill_sha:
-        raise ContractError("v1 baseline Skill hash does not match frozen commit")
-
-    # `ls-tree` accepts one `--` followed by all paths, not repeated separators.
-    tracked = git("ls-tree", "-r", "--name-only", commit, "--", *paths).decode().splitlines()
-    if not tracked:
-        raise ContractError("v1 baseline file list is empty")
-    drift = []
-    for relative in tracked:
-        current = ROOT / relative
-        if not current.is_file():
-            drift.append(f"missing:{relative}")
-            continue
-        frozen = git("show", f"{commit}:{relative}")
-        if current.read_bytes() != frozen:
-            drift.append(f"changed:{relative}")
-    current_files = sorted(
-        path.relative_to(ROOT).as_posix()
-        for base in paths
-        for path in (ROOT / base).rglob("*")
-        if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"
-    )
-    added = sorted(set(current_files) - set(tracked))
-    drift.extend(f"added:{path}" for path in added)
-    if drift:
-        raise ContractError("v1 baseline drift: " + ", ".join(drift))
-    return {"commit": commit, "file_count": len(tracked), "drift": 0}
-
-
-def validate_v2(suite: dict[str, Any]) -> dict[str, Any]:
+def validate_protocol(suite: dict[str, Any]) -> dict[str, Any]:
     if not (SUITE_PATH.parent / "run_validation.py").is_file():
         raise ContractError("v2 mechanical validation runner missing")
     if not (SUITE_PATH.parent / "run_final_ab.py").is_file():
@@ -291,8 +233,7 @@ def main() -> int:
         suite = read_suite()
         result = {
             "status": "VALIDATION_SOURCE_OK",
-            "v1": validate_v1(suite),
-            "v2": validate_v2(suite),
+            "protocol": validate_protocol(suite),
         }
     except ContractError as error:
         result = {"status": "VALIDATION_SOURCE_FAILED", "error": str(error)}

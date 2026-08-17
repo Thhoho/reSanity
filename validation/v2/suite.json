@@ -2,12 +2,6 @@
   "schema": "resanity.validation-suite.v2",
   "method_status": "UNBENCHMARKED_CURRENT",
   "result_status": "NOT_RUN",
-  "v1_baseline": {
-    "commit": "746c21d9af3ba76221f16c9ba5c73730b017346b",
-    "skill_sha256": "8d9dfb8ada23a5390ed89b2f9d3b0fe426d37bce068baac3b5f69894d26e293d",
-    "paths": ["validation/dsh-pilot", "validation/dsh-full"],
-    "result_scope": "HISTORICAL_V1_ONLY"
-  },
   "layers": {
     "core_contract": {
       "result_status": "NOT_RUN",

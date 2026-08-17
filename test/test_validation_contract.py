@@ -215,8 +215,7 @@ class ValidationContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["status"], "VALIDATION_SOURCE_OK")
-        self.assertEqual(payload["v2"]["semantic_status"], "NOT_RUN")
-        self.assertEqual(payload["v1"]["drift"], 0)
+        self.assertEqual(payload["protocol"]["semantic_status"], "NOT_RUN")
 
     def test_internal_validation_corpus_is_not_in_package_files(self) -> None:
         package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
@@ -228,10 +227,6 @@ class ValidationContractTests(unittest.TestCase):
         self.assertEqual(
             package["scripts"]["validate:v2:prelayers:dsh"],
             "python3 validation/v2/run_dsh_prelayers.py",
-        )
-        self.assertEqual(
-            package["scripts"]["validate:v2:bridge:dsh"],
-            "bash validation/v2/run-targeted-bridge-dsh.sh",
         )
         self.assertNotIn("validation/", package["files"])
         self.assertNotIn("validation/v2/", package["files"])
@@ -247,18 +242,6 @@ class ValidationContractTests(unittest.TestCase):
         self.assertNotIn("scripts/", package["files"])
         self.assertIn("scripts/free_market_observations.py", package["files"])
         self.assertIn("scripts/tier1_providers.py", package["files"])
-
-    def test_targeted_bridge_selects_only_impacted_cases(self) -> None:
-        script = (ROOT / "validation/v2/run-targeted-bridge-dsh.sh").read_text(
-            encoding="utf-8"
-        )
-        for case_id in ("O02-policy-outcome", "O03-investing-exposure"):
-            self.assertIn(f"--case {case_id}", script)
-        for historical_pass in ("T07-coding", "O01-product-passkey"):
-            self.assertNotIn(f"--case {historical_pass}", script)
-        self.assertNotIn("--case C01-product-claim", script)
-        self.assertIn("--dry-run", script)
-
 
 if __name__ == "__main__":
     unittest.main()

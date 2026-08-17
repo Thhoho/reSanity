@@ -1,4 +1,0 @@
-{"type":"thread.started","thread_id":"01a006ab-0525-7ca2-8b72-aa2ee0b0befb"}
-{"type":"turn.started"}
-{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"请把要翻译的句子发给我。"}}
-{"type":"turn.completed","usage":{"input_tokens":11410,"cached_input_tokens":10624,"output_tokens":16,"reasoning_output_tokens":0}}

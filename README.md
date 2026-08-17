@@ -4,7 +4,7 @@
 
 Resanity 是一个证据研究 Skill：把会改变决策的判断拆成“观察到什么、可以推出什么、不能推出什么、对决策有什么影响”。模型保留全部研究语义；代码只做 hash、引用、as-of、来源血缘、预算和安装身份等机械检查。
 
-当前正式代码版本是 **`0.2.0`**；当前方法状态仍是
+当前正式代码版本是 **`0.2.1`**；当前方法状态仍是
 **`UNBENCHMARKED_CURRENT`**。测试通过或有限 A/B 达线不等于研究有效，不证明 Alpha、收益或 PMF。
 
 ## 0.2 有什么变化
@@ -99,7 +99,7 @@ python3 tools/research_check.py path/to/report.receipt.json \
 `cordis.patch.yml` 只激活 Resanity，不组合场景或其他插件：
 
 ```sh
-dsh plugin --profile headless add /absolute/path/resanity-0.2.0.tgz
+dsh plugin --profile headless add /absolute/path/resanity-0.2.1.tgz
 ```
 
 安装成功后 `resanity` 应自动追加到该 profile 的 `dsh.profile.bundles`；不需要手工编辑
@@ -116,15 +116,8 @@ python3 tools/validation_source_check.py
 env npm_config_cache=/private/tmp/resanity-npm-cache npm pack --dry-run
 ```
 
-v2 分层为 core contract、investing profile、open network、anchor、trigger、install identity 和最终同 hash A/B。`validation/dsh-pilot` 与 `validation/dsh-full` 是 v1 历史基线，不是 v2 成绩。
-`2.0.0-rc.1` 在 2026-08-16 的 8 案例 DSH A/B 中经三角色盲化 AI 合议以 6:2 达到有限数值线，
-但不是 clean pass；四项已知缺陷和适用边界见
-[`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)。
-`2.0.0-rc.2` 的冻结定向 DSH 集合中 C03、O02、O03 通过，O01 因用事后当前页回填历史状态而失败（3/4）；
-该失败促成预发布候选 `2.0.0-rc.3` 的主张/来源时态资格闸门与失败报告保全修复。该候选的 C03/O01/O02/O03
-定向 DSH 前向验证为 4/4 机械完成且语义通过；正式 `0.2.0` 保持相同 Skill/profile identity，只调整发布版本与说明。
-这是定向修复线，不是完整 A/B 或方法 stable 门槛。记录见
-[`validation/v2/runs/2026-08-17-rc3-targeted-dsh/`](validation/v2/runs/2026-08-17-rc3-targeted-dsh/README.md)。
+当前源码树只保留 core contract、investing profile、open network、anchor、trigger、install identity 和同 hash A/B 的可复用验证协议；候选过程记录和旧协议留在 Git 历史，不进入 0.2.1 发布树。
+目录名与 JSON 中的 `v1` / `v2` 是机械数据合同的 schema 代际，不是 Resanity 产品版本。
 8 案例 DSH headless 采集器入口为 `npm run validate:v2:ab:dsh -- --help`；其 dry-run
 会先核对 B/R profile 差异、active Skill/profile hash、宿主 patch 与前六层收据，具体参数见
 `validation/v2/README.md`。

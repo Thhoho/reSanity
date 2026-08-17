@@ -1,25 +1,8 @@
-# Resanity v2 分层验证
+# Resanity 分层验证协议
 
-> 当前结果：`2.0.0-rc.1` 的 8 案例 DSH A/B 已完成，三角色盲化 AI 合议为
-> `MEETS_LIMITED_AB_LINE_BY_THREE_ROLE_AI_PANEL`，但不是 clean pass；方法状态仍为
-> `UNBENCHMARKED_CURRENT`。正式 `0.2.0` 与预发布候选 `2.0.0-rc.3` 共享同一 Skill/profile identity，
-> 该 identity 的 C03/O01/O02/O03 定向 DSH 前向验证为 4/4 通过；
-> 该结果不是完整同 hash A/B 或 stable 发布门槛。
-> 本目录不把 v1、RC1 或 RC2 结果迁移成 0.2.0 成绩。
-
-2026-08-16 的 Codex 迭代预检及失败证据保存在 [runs/2026-08-16-iterative-preflight/](runs/2026-08-16-iterative-preflight/README.md)。该批产物跨多个候选 hash，只用于定位和收敛架构，不是冻结候选成绩。
-
-同日最终 A/B 的冻结身份、合议结果和已知缺陷保存在
-[runs/2026-08-16-dsh-final-ab-ai-panel/](runs/2026-08-16-dsh-final-ab-ai-panel/README.md)。
-三位评审是空白上下文的独立 AI 角色，不是独立人类；该结果不证明广泛研究有效、Alpha、PMF 或 stable 发布就绪。
-RC2 的四项窄修复、机械验证和 fresh DSH 未运行边界记录在
-[runs/2026-08-16-rc2-targeted-repair/](runs/2026-08-16-rc2-targeted-repair/README.md)。
-RC2 后续冻结定向 DSH 集合的累计语义结果为 3/4；O01 的时态来源失败记录在
-[runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/](runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/README.md)。
-0.2.0 同 identity 预发布候选的机械收据、逐案语义复核和发布边界记录在
-[runs/2026-08-17-rc3-targeted-dsh/](runs/2026-08-17-rc3-targeted-dsh/README.md)。
-`suite.json` 保持为未预填结果的可复用协议模板，因此其中的 `result_status` 仍是
-`NOT_RUN`；具体运行状态只写入带日期、identity 与证据绑定的 `runs/` 记录。
+> 目录名和 schema 中的 `v2` 表示机械验证合同的第二代结构，不是 Resanity 产品版本。
+> `suite.json` 是未预填结果的可复用协议模板，`result_status` 保持 `NOT_RUN`；
+> 方法状态保持 `UNBENCHMARKED_CURRENT`。历史候选与运行产物留在 Git 历史，不进入当前发布树。
 
 ## 运行前冻结
 
@@ -78,11 +61,11 @@ trigger 题保留原始用户请求，不前置 Resanity 指令；runner 只添�
 
 每个案例/臂保存 `task-prompt.md`、`arm-instruction.md`、`composed-prompt.md`、`report.md`、`sources/`、`host-receipt.json`、原始会话和 `skill-identity.json`。两臂使用完全相同、不含 Resanity 术语的中性 task prompt：B 臂只前置 `prompts/strong-baseline.md` 且环境中不安装 Resanity；R 臂只前置 `prompts/candidate-instruction.md` 并核对 canonical identity。不要给 B 臂暴露 Skill，也不要给任一臂暴露评分规则。
 
-候选晋级线：8/8 两臂都有原始产物或如实失败；R 臂 identity/profile 与冻结版本 100% 一致；R 无事实 P0 负回归；至少 6/8 案例的决策效用优于 B；中位非缓存 token 不超过 B 的 1.25 倍。达标只允许说“v2 在这组有限 A/B 中通过”，仍不证明 Alpha 或 PMF。
+候选晋级线：8/8 两臂都有原始产物或如实失败；R 臂 identity/profile 与冻结版本 100% 一致；R 无事实 P0 负回归；至少 6/8 案例的决策效用优于 B；中位非缓存 token 不超过 B 的 1.25 倍。达标只允许说“当前协议在这组有限 A/B 中通过”，仍不证明 Alpha 或 PMF。
 
 ## 大问题与小问题
 
-发布阻断：语义所有权越界、自动重试/补证据/行动、身份错配、类别性误触发、锚历史破坏、v1 成绩冒充 v2、任何事实 P0 负回归。
+发布阻断：语义所有权越界、自动重试/补证据/行动、身份错配、类别性误触发、锚历史破坏、旧身份成绩冒充当前成绩、任何事实 P0 负回归。
 
 允许记录后继续：不影响根结论的措辞/排版差异、可定位的 `MAJOR_NON_P0`、宿主显示路径但 hash 完全一致、最终 A/B 尚未运行（但必须保持 `UNBENCHMARKED_CURRENT`）。
 
@@ -178,18 +161,18 @@ python3 validation/v2/run_dsh_prelayers.py \
 trigger 与 install identity 必须核对宿主收据。六层评审证据齐备后，才填写 v2 prelayers
 收据并交给最终 A/B runner。
 
-若一次完整前置采集已把失败收敛到少数明确根因，后续候选可以先做变更影响分析，
-只运行受改动直接影响的定向桥接案例；不得把旧 hash 的通过结果冒充新 hash 成绩。
-定向桥接必须绑定新 identity、保留一次性失败，并明确列出未重跑层属于历史回归证据。
-当前 r10 桥接已证明 `T07/O01` 通过；r11 修复桥接入口只运行受影响的
-`O02/O03`，不把 r10 结果写成 r11 的同 hash 成绩：
+若一次完整前置采集已把失败收敛到少数明确根因，可以先做变更影响分析，再用
+`--case` 重复指定受影响案例。定向运行必须绑定当前 identity、使用全新输出目录并保留
+一次性失败；它是诊断证据，不得与旧 hash 的结果拼成当前同 hash 成绩：
 
 ```sh
-bash validation/v2/run-targeted-bridge-dsh.sh --dry-run
-bash validation/v2/run-targeted-bridge-dsh.sh /absolute/new/path/resanity-dsh-repair-r11
+python3 validation/v2/run_dsh_prelayers.py \
+  --output /absolute/new/path/resanity-dsh-targeted \
+  --case <case-id> \
+  <其余冻结身份与宿主参数>
 ```
 
-桥接通过只允许进入最终 A/B，不等于六层重新取得同 hash 全量成绩，也不改变
+定向通过不等于六层重新取得同 hash 全量成绩，也不改变
 `UNBENCHMARKED_CURRENT`。
 
 先运行零模型 dry-run；把 provider、model 和 reasoning effort 填成 DSH 新会话原始

@@ -2,9 +2,9 @@
 
 > 当前状态：`UNBENCHMARKED_CURRENT`。验证协议不执行研究语义，不把工程通过解释成效果、Alpha 或 PMF。
 
-## 当前 v2
+## 当前协议
 
-v2 从根因重建为七层：
+当前验证协议分为七层：
 
 1. core contract；
 2. investing profile；
@@ -14,7 +14,7 @@ v2 从根因重建为七层：
 6. install identity；
 7. same-hash final A/B。
 
-源码仓库入口是 `validation/v2/README.md` 与 `validation/v2/suite.json`。当前仓库只冻结源合同和未来运行入口，没有 v2 语义成绩；npm tarball 不包含内部 suite 和 prompts。
+源码仓库入口是 `validation/v2/README.md` 与 `validation/v2/suite.json`。目录名及 schema 中的 `v2` 是机械合同代际，不是 Resanity 产品版本。当前仓库只冻结源合同和未来运行入口，没有预填语义成绩；安装包不包含内部 suite 和 prompts。
 
 在包含 `.git` 和内部 suites 的源码 checkout 中先运行机械源检查（npm tarball 故意不带内部 prompts）：
 
@@ -29,17 +29,11 @@ npm run validate:v2 -- --active-skill /actual/loaded/resanity/SKILL.md \
   --host codex --output /tmp/resanity-v2-mechanical-receipt.json
 ```
 
-它验证 v1 历史文件未漂移、v2 七层与案例资产齐全、trigger 有正反样本、最终 A/B 仍为 `NOT_RUN`。它不调用模型、不评分报告。
-
-## v1 历史基线
-
-`dsh-pilot/` 与 `dsh-full/` 是提交 `746c21d9af3ba76221f16c9ba5c73730b017346b` 冻结的 v1 原始证据和 runner。它们保持原样，只能表述为 v1 历史基线，不能作为 v2 成绩。
-
-旧套件仍可用于复现历史工程合同，但其中投资化 prompt、21 会话矩阵和旧 Skill hash 不得与 v2 混跑或合并计分。
+它验证当前七层协议与案例资产齐全、trigger 有正反样本、最终 A/B 仍为 `NOT_RUN`。它不调用模型、不评分报告。旧套件和历史运行记录只保留在 Git 历史中，不进入当前发布树。
 
 ## 正式报告收据
 
-v2 使用 [receipt-template.json](receipt-template.json) 的 `resanity.audit-receipt.v2`。宿主计量仍使用无语义的 [host-receipt-template.json](host-receipt-template.json) `resanity.host-receipt.v1`。
+正式报告使用 [receipt-template.json](receipt-template.json) 的 `resanity.audit-receipt.v2`。宿主计量使用无语义的 [host-receipt-template.json](host-receipt-template.json) `resanity.host-receipt.v1`。这些后缀是 schema 版本，不是产品版本。
 
 正式检查必须同时传 canonical 与实际加载路径：
 

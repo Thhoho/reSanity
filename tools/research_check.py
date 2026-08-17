@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate a reSanity report receipt without judging research semantics.
+"""Validate a Resanity report receipt without judging research semantics.
 
 The Markdown report remains the only semantic artifact. This checker only
 verifies mechanical boundaries: canonical/active/profile identity, frozen
@@ -694,7 +694,7 @@ def validate_receipt(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Validate a reSanity audit receipt without judging its conclusion."
+        description="Validate a Resanity audit receipt without judging its conclusion."
     )
     parser.add_argument("receipt", help="path to a resanity.audit-receipt.v2 JSON file")
     parser.add_argument("--skill", default=str(ROOT / "SKILL.md"), help="exact SKILL.md to hash-bind")

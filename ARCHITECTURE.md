@@ -1,6 +1,6 @@
 # Resanity 0.2 架构
 
-> 代码版本：`0.2.0`（正式发行版）。方法状态：`UNBENCHMARKED_CURRENT`。
+> 代码版本：`0.2.1`（正式发行版）。方法状态：`UNBENCHMARKED_CURRENT`。
 > 工程通过、机械收据闭合、安装身份一致或有限 A/B 达线，都不等于研究效果、Alpha 或 PMF。
 
 ## 根原则
@@ -22,7 +22,7 @@ canonical SKILL.md：原子主张协议 + 条件路由
 机械外壳：hash / as-of / 引用 / 血缘 / 预算 / 安装身份
 ```
 
-v2 不把投资完整报告、锚持久化或正式收据放进所有请求的热路径。是否加载某个 reference，由本次问题决定。
+当前架构不把投资完整报告、锚持久化或正式收据放进所有请求的热路径。是否加载某个 reference，由本次问题决定。
 
 ## 语义所有权
 
@@ -95,9 +95,7 @@ profiles 是条件加载文件的机械组合，不是第二个 Skill，也不�
 
 ## 验证分层
 
-v2 使用七层验证，详见 `validation/v2/README.md`：core contract、investing profile、open network、anchor lifecycle、trigger、install identity、same-hash final A/B。
-
-v1 的 `validation/dsh-pilot` 与 `validation/dsh-full` 由冻结提交 `746c21d9…` 保留为历史基线。`tools/validation_source_check.py` 会逐文件与该提交对比；这些文件不能被当成 v2 成绩。
+当前验证协议使用七层，详见 `validation/v2/README.md`：core contract、investing profile、open network、anchor lifecycle、trigger、install identity、same-hash final A/B。路径和 schema 中的 `v2` 表示机械合同代际，与产品版本 `0.2.1` 无关。源码树只保留可复用协议；历史运行证据留在 Git 历史。
 
 ## 发布门槛
 
@@ -108,19 +106,12 @@ v1 的 `validation/dsh-pilot` 与 `validation/dsh-full` 由冻结提交 `746c21d
 - 非投资普通任务被广泛抢占；
 - active/canonical/profile 身份不一致仍可进入正式评分；
 - refuted/realized/archived 锚仍被当作 active 提醒；
-- v1 结果被表述为 v2 成绩；
+- 旧版本或不同身份的结果被表述为当前成绩；
 - 工程通过被表述为研究有效、Alpha 或 PMF。
 
 可接受但必须记录的小问题：非关键措辞/排版差异；不影响 identity/hash 的路径展示差异；不改变根结论和行动的 `MAJOR_NON_P0`；未完成真实 A/B，因此状态继续为 `UNBENCHMARKED_CURRENT`。
 
-`2.0.0-rc.1` 完成了 8 案例 DSH 最终 A/B 和三角色盲化 AI 合议，数值线达标但不是 clean pass。
-`2.0.0-rc.2` 的冻结定向 DSH 集合为 3/4，O01 暴露“当前页回填历史状态”；预发布候选 `2.0.0-rc.3` 因此新增显式时态资格矩阵，
-并在宿主交付失败时保全工作区报告但不把失败改写为成功。该候选新 identity 的 C03/O01/O02/O03 定向 DSH 前向验证为
-4/4 机械完成且语义通过；正式 `0.2.0` 保持同一 Skill/profile identity。该结果只覆盖本次缺陷与邻近回归，
-不解除 `UNBENCHMARKED_CURRENT`，也不等于完整 A/B 或方法有效性已稳定。
-RC1 合议与 RC2 失败记录分别见 [`validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/`](validation/v2/runs/2026-08-16-dsh-final-ab-ai-panel/README.md)
-和 [`validation/v2/runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/`](validation/v2/runs/2026-08-17-rc2-targeted-dsh-rerun-o01-o02/README.md)。
-0.2.0 所绑定的预发布候选定向前向记录见 [`validation/v2/runs/2026-08-17-rc3-targeted-dsh/`](validation/v2/runs/2026-08-17-rc3-targeted-dsh/README.md)。
+0.2.1 的发布门槛只接受当前 checkout、当前 Skill/profile hash 和当前宿主身份产生的结果。工程测试与机械源检查必须通过，但方法状态仍保持 `UNBENCHMARKED_CURRENT`；历史候选记录不随当前发布树分发，也不能替代新的完整 A/B。
 
 ## 明确不做
 

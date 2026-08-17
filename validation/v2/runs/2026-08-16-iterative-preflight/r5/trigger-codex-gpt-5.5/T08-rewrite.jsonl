@@ -1,4 +1,0 @@
-{"type":"thread.started","thread_id":"01a006aa-ef17-7bc0-808b-401d44ae6d38"}
-{"type":"turn.started"}
-{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"可以。请把邮件正文发给我，我会帮你改成更礼貌、自然的版本。"}}
-{"type":"turn.completed","usage":{"input_tokens":11412,"cached_input_tokens":10624,"output_tokens":27,"reasoning_output_tokens":0}}

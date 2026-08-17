@@ -1,7 +1,7 @@
 {
   "name": "resanity",
   "description": "Resanity 0.2：原子主张证据研究 Skill 与可选 DeepSeek Harness 机械外壳",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -24,8 +24,7 @@
     "validate:v2": "python3 validation/v2/run_validation.py",
     "validate:v2:ab": "python3 validation/v2/run_final_ab.py",
     "validate:v2:ab:dsh": "python3 validation/v2/run_final_ab_dsh.py",
-    "validate:v2:prelayers:dsh": "python3 validation/v2/run_dsh_prelayers.py",
-    "validate:v2:bridge:dsh": "bash validation/v2/run-targeted-bridge-dsh.sh"
+    "validate:v2:prelayers:dsh": "python3 validation/v2/run_dsh_prelayers.py"
   },
   "files": [
     "lib/index.js",
@@ -35,7 +34,6 @@
     "references/",
     "ARCHITECTURE.md",
     "README.md",
-    "EXAMPLES.md",
     "LICENSE",
     "scripts/free_market_observations.py",
     "scripts/tier1_providers.py",
