@@ -1,6 +1,6 @@
 {
   "schema_version": "resanity.rc-targeted-repair.v1",
-  "status": "RC2_ENGINEERING_RELEASE_READY_BEHAVIOR_NOT_RERUN",
+  "status": "RC2_ENGINEERING_RELEASE_READY_TARGETED_VALIDATION_PARTIAL",
   "version": "2.0.0-rc.2",
   "base_commit": "45cc0db7db87614b69e552d356aeedc68546d64f",
   "branch": "codex/resanity-v2-rc2",
@@ -30,7 +30,11 @@
     "package_dry_run": "PASS_27_FILES"
   },
   "fresh_behavior_validation": {
-    "status": "NOT_RUN_REQUIRES_EXPLICIT_DEEPSEEK_DATA_EGRESS_AUTHORIZATION",
+    "status": "PARTIAL_EXTERNAL_QUOTA",
+    "run_date": "2026-08-17",
+    "collection_root": "/private/tmp/resanity-v2-rc2-dsh.t5F3nz/targeted",
+    "collection_summary_sha256": "1f3810e2fde142c2dd9691dcc35d4a1b28b5072a7586a0c5d4d1c78a64d03a7b",
+    "run_manifest_sha256": "bc4827e0502747223e9865fd0aaaa577f7846a9b4e8d8a3b77aa4d3e805e3456",
     "selected_cases": [
       "C03-technical-debug",
       "O01-product-passkey",
@@ -38,7 +42,17 @@
       "O03-investing-exposure"
     ],
     "automatic_retries": 0,
-    "external_sessions_started": 0
+    "external_sessions_started": 4,
+    "host_complete_sessions": 2,
+    "external_quota_incomplete_sessions": 2,
+    "semantic_pass_cases": [
+      "C03-technical-debug",
+      "O03-investing-exposure"
+    ],
+    "not_accepted_or_evaluable_cases": [
+      "O01-product-passkey",
+      "O02-policy-outcome"
+    ]
   },
   "release_boundary": "Local RC2 commit and tarball only; no stable tag, push, publish, DSH live install, or effectiveness claim."
 }

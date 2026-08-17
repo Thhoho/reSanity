@@ -1,0 +1,112 @@
+{
+  "schema_version": "resanity.rc2-targeted-dsh-review.v1",
+  "status": "TARGETED_VALIDATION_PARTIAL_EXTERNAL_QUOTA",
+  "method_status": "UNBENCHMARKED_CURRENT",
+  "stable_release_authorized": false,
+  "final_ab_authorized": false,
+  "candidate_skill_sha256": "0704f56286ad6de61ba9c6e1954fb7b38a0c0a8e02f22bfc1ede5422a857c381",
+  "candidate_profiles_sha256": {
+    "core": "76c184f2f873a975b0327b15288ae483600fd66b3000214966741647fc2838da",
+    "investing": "3a1f7f9f8d2b5ae695753efd011738cf24acf4841e599756fd79a53cd1895de8",
+    "anchors": "71e0097037831ef836841242f3e57931d0af6cb28f1b3d0ccfb351728ad80faa",
+    "formal-audit": "f1e7997e21fd5fab6625b52d1cabb1dee4324cbecaa8b1360f59f03ced61b3aa"
+  },
+  "host": {
+    "adapter": "dsh-headless",
+    "version": "0.1.0-rc.6",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-pro",
+    "reasoning_effort": "max",
+    "concurrency": 2
+  },
+  "collection": {
+    "root": "/private/tmp/resanity-v2-rc2-dsh.t5F3nz/targeted",
+    "summary_sha256": "1f3810e2fde142c2dd9691dcc35d4a1b28b5072a7586a0c5d4d1c78a64d03a7b",
+    "manifest_sha256": "bc4827e0502747223e9865fd0aaaa577f7846a9b4e8d8a3b77aa4d3e805e3456",
+    "started_sessions": 4,
+    "completed_sessions": 2,
+    "expected_sessions": 4,
+    "automatic_retries": 0,
+    "status": "HOST_COLLECTION_INCOMPLETE"
+  },
+  "cases": [
+    {
+      "id": "C03-technical-debug",
+      "mechanical": "PASS",
+      "semantic": "PASS",
+      "wall_seconds": 92.434,
+      "tool_executions": 1,
+      "tool_attempts": 1,
+      "budget_denials": 0,
+      "source_files": 0,
+      "report_sha256": "0b0af4f3102a58a5421333410c746d6f6ba40f0d22eae29767b012c0287a2a01",
+      "host_receipt_sha256": "5f53b122812e64ea180eb8fd0dc47f60a3a9251f2b3564d1454a33c15b5f08a1",
+      "raw_session_sha256": "ce85b5ef929fcf0e4ff0cf3cf1f10982779d72a93c7dc0d6804b2a9e5c1cd1d4",
+      "findings": [
+        "Compatible evidence is explicitly separated from discriminating evidence.",
+        "The release, vendor, and interaction hypotheses remain co-active and unranked.",
+        "Regional and upload-path counterexamples reject the universal failure claim."
+      ]
+    },
+    {
+      "id": "O01-product-passkey",
+      "mechanical": "INCOMPLETE_EXTERNAL_QUOTA",
+      "semantic": "NOT_EVALUABLE",
+      "wall_seconds": 223.474,
+      "tool_executions": 14,
+      "tool_attempts": 14,
+      "budget_denials": 0,
+      "source_files": 3,
+      "report_sha256": null,
+      "host_receipt_sha256": "9525a7ffe5e84f537fa113236817c3b067944b464cc40d692dd1ebe4522ae71d",
+      "raw_session_sha256": "479a3a1b0d6aa67a5a97504f103a4ffabf5764f6b6e57b609a49ee6052744301",
+      "blocking_findings": [
+        "DeepSeek returned QUOTA Insufficient Balance during research.",
+        "No report was produced, so dated source-status behavior cannot be reviewed."
+      ]
+    },
+    {
+      "id": "O02-policy-outcome",
+      "mechanical": "INCOMPLETE_EXTERNAL_QUOTA",
+      "semantic": "NOT_ACCEPTED",
+      "wall_seconds": 616.662,
+      "tool_executions": 30,
+      "tool_attempts": 30,
+      "budget_denials": 0,
+      "source_files": 14,
+      "stdout_report_sha256": "1050712883c53910645c7226dde618277f31b5984ebe540f06560cc12d76b6f0",
+      "recovered_workspace_report_sha256": "3b95f0e9feddce679e3e2144a49714fbaa7046d092e7e310079578539731b3de",
+      "host_receipt_sha256": "f5048943e22983fbde02b11f226d3d436b23205381d4f0ec1130dad9df54e186",
+      "raw_session_sha256": "94e126ad844ec9e1f9acf5833f0e5b360db0d69c31803a22fab53cafc3e9638a",
+      "blocking_findings": [
+        "The formal REPORT.md write succeeded, but DeepSeek quota exhaustion prevented a final user-facing model message and DSH exited nonzero.",
+        "Collected stdout is process speech rather than the formal report.",
+        "The recovered root mixes a falsity verdict with NOT_ESTABLISHED and partly relies on a document without a visible publication date for an as-of-constrained claim."
+      ],
+      "non_blocking_findings": [
+        "The recovered report preserves official-silence limits and identifies one next validation.",
+        "The saved formal artifact demonstrates partial graceful degradation but not terminal host delivery."
+      ]
+    },
+    {
+      "id": "O03-investing-exposure",
+      "mechanical": "PASS",
+      "semantic": "PASS",
+      "wall_seconds": 481.485,
+      "tool_executions": 30,
+      "tool_attempts": 31,
+      "budget_denials": 1,
+      "source_files": 20,
+      "report_sha256": "9691095240709ad59a7b39e2cf96f714956f98f3fe1185ea0a5212bb5a9e1cd0",
+      "host_receipt_sha256": "d7f005e32149bafd40d3c24fd933f02636390cd99f4c6948a3cf8c860294c80f",
+      "raw_session_sha256": "4b00737062542414c9680da0b5c0018e2d3d7741757b9914c9c7c6c37dd8098f",
+      "findings": [
+        "Aggregate company observations are not presented as a same-lineage liquid-cooling chain.",
+        "Liquid-cooling-specific attribution remains NOT_EVALUABLE.",
+        "A readable report was delivered after the validation guard denied the 31st tool attempt."
+      ]
+    }
+  ],
+  "release_boundary": "RC2 remains a local release candidate. The targeted run is not a four-case pass, stable-release gate, final A/B, or broad effectiveness claim.",
+  "next_step": "Do not rerun automatically. Restore provider balance before a fresh frozen-identity run of O01 and O02; any candidate change requires a new identity."
+}

@@ -1,6 +1,6 @@
 # Resanity 2.0.0-rc.2 targeted repair
 
-Status: `RC2_ENGINEERING_RELEASE_READY_BEHAVIOR_NOT_RERUN`. Method status remains
+Status: `RC2_ENGINEERING_RELEASE_READY_TARGETED_VALIDATION_PARTIAL`. Method status remains
 `UNBENCHMARKED_CURRENT`.
 
 ## Scope
@@ -36,10 +36,13 @@ research state machine or case-specific answers:
 
 ## Behavior boundary
 
-A fresh four-case DSH run was prepared for C03/O01/O02/O03 with the same model, budgets, neutral
-task prompts, zero automatic retries, and an isolated RC2 tarball. It was not launched because the
-specific local product, policy, and investment materials require explicit authorization before they
-are sent to the DeepSeek API. No workaround, retry, or substitute external run occurred.
+After explicit authorization, a fresh four-case DSH run launched C03/O01/O02/O03 with the same
+model, budgets, neutral task prompts, zero automatic retries, and the isolated RC2 tarball. C03 and
+O03 completed and passed manual semantic review. O01 and O02 ended after DeepSeek returned
+`QUOTA: Insufficient Balance`; O01 produced no report, while O02 left a recoverable formal file but
+did not complete terminal host delivery. See `../2026-08-17-rc2-targeted-dsh/` for the bound hashes
+and review.
 
-Therefore RC1's 6:2 result is historical evidence for RC1 only. RC2 is a local release candidate,
-not a stable release and not a claim of broad research effectiveness, Alpha, or PMF.
+Therefore RC1's 6:2 result remains historical evidence for RC1 only, and the new RC2 run is a
+partial targeted result rather than a four-case pass. RC2 is a local release candidate, not a stable
+release and not a claim of broad research effectiveness, Alpha, or PMF.
