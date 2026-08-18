@@ -79,6 +79,7 @@ Resanity 把会改变投资决策的判断拆成四个问题：**观察到什么
 - 投资、认知锚和正式审计分别放在条件加载的 `references/`；
 - 投资研究可以自动触发，非投资实验必须由用户明确调用；
 - 回答按问题选择模块，不强制每次生成完整报告；
+- 可读研究报告与机械审计解耦：未知和审计失败进入披露，不阻断报告；
 - 锚使用 `active / refuted / realized / archived` 生命周期，代码只读和提醒；
 - 正式验证绑定 active locator、canonical Skill hash 与 profile hash，避免验证 A、实际加载 B；
 - 正式收据绑定主张时态、来源日期依据和覆盖截止日，阻断用事后当前页回填历史状态。
@@ -132,9 +133,11 @@ python3 tools/skill_identity.py --host dsh --cwd "$PWD" --profile investing
 
 锚的生命周期为 `active / refuted / realized / archived`。提醒器只读 `active` 锚的日期触发器；说“更新锚”才会进入研究和更新，不会在后台自动改写判断。可选的 `journal/decisions.md` 用于记录当时相信什么、采取了什么动作及后来如何验证。
 
-## 正式报告
+## 研究报告与机械审计
 
-普通聊天不需要收据。需要保存正式报告或做 A/B 时，先读 `references/formal-audit.md`，生成 `resanity.audit-receipt.v2`，再运行：
+每次研究首先交付可读报告；证据不足、开放问题或暂不动作都是合法报告结论。报告不需要等到研究“收敛”，也不需要先取得收据。用户要求保存时，先把同一内容写入 `report.md`；文件失败时，最终回答中的完整内容仍是报告。
+
+普通聊天不需要收据。需要机械审计或做 A/B 时，在报告已经交付或保存后，读取 `references/formal-audit.md`，再生成 `resanity.audit-receipt.v2` 并运行：
 
 ```sh
 python3 tools/research_check.py path/to/report.receipt.json \
@@ -142,7 +145,7 @@ python3 tools/research_check.py path/to/report.receipt.json \
   --active-skill /actual/loaded/resanity/SKILL.md
 ```
 
-正式验证增加 `--strict`。`AUDIT_RECEIPT_OK` 只代表机械合同闭合，不代表结论正确。
+正式验证增加 `--strict`。`AUDIT_RECEIPT_OK` 只代表机械合同闭合，不代表结论正确；`AUDIT_NOT_RUN` 或 `AUDIT_INCOMPLETE` 也不等于报告未生成。
 
 ## DSH 插件（可选）
 

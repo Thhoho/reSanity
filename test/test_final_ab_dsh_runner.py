@@ -316,12 +316,18 @@ class DshFinalAbRunnerTests(unittest.TestCase):
 
             self.assertFalse(row["host_complete"])
             self.assertFalse(row["report_present"])
+            self.assertTrue(row["report_available"])
+            self.assertEqual(row["report_origin"], "workspace_recovery")
             self.assertTrue(row["recovered_report"])
             self.assertIn("dsh_exit_code", row["mechanical_failures"])
             self.assertIn("report_process_only", row["mechanical_failures"])
             self.assertTrue((artifact / "stdout.md").is_file())
-            self.assertFalse((artifact / "report.md").exists())
+            self.assertTrue((artifact / "report.md").is_file())
             self.assertTrue((artifact / "recovered-report.md").is_file())
+            self.assertEqual(
+                (artifact / "report.md").read_text(encoding="utf-8"),
+                "# 根结论\n\n已交付可读报告。\n",
+            )
 
 
 if __name__ == "__main__":

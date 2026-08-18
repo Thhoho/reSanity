@@ -207,6 +207,8 @@ def run_session(
     report_failures = DSH.report_delivery_failures(stdout)
     failures.extend(report_failures)
     report_present = not report_failures
+    report_available = report_present
+    report_origin = "final_response" if report_present else "missing"
     recovered_report = None
     if report_present:
         (artifact / "report.md").write_text(stdout, encoding="utf-8")
@@ -214,6 +216,10 @@ def run_session(
         recovered_report = DSH.recover_workspace_report(
             workspace, artifact / "recovered-report.md"
         )
+        if recovered_report is not None:
+            shutil.copy2(artifact / "recovered-report.md", artifact / "report.md")
+            report_available = True
+            report_origin = "workspace_recovery"
     if metrics:
         expected = {
             "provider": args.expected_provider,
@@ -288,6 +294,8 @@ def run_session(
             "timed_out": timed_out,
             "session_artifacts": len(sessions),
             "recovered_report": recovered_report,
+            "report_available": report_available,
+            "report_origin": report_origin,
         },
     }
     BASE.write_json(artifact / "host-receipt.json", host_receipt)
@@ -298,6 +306,8 @@ def run_session(
         "mode": case.get("mode"),
         "host_complete": not failures,
         "report_present": report_present,
+        "report_available": report_available,
+        "report_origin": report_origin,
         "recovered_report": recovered_report is not None,
         "semantic_review": "NOT_REVIEWED",
         "resanity_invocations": invocations,

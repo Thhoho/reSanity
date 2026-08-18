@@ -219,7 +219,7 @@ python3 validation/v2/run_final_ab_dsh.py \
 execution，预算以真实 execution 为准。该依赖必须在 B/R profile 中完全相同，
 不得成为 Resanity treatment 的一部分。
 并在一次性会话中关闭文件热加载 watcher、固定 Chokidar polling，避免 macOS FSEvents
-句柄余量污染验证。脚本把 stdout 作为最终报告，保留
+句柄余量污染验证。脚本把合格 stdout 作为用户已收到的最终报告；若 stdout 缺失、只有过程说明或泄漏工具协议，但工作区已有 `REPORT.md`，脚本同时保留诊断副本并提升为 canonical `report.md`，标记 `report_origin=workspace_recovery` 和宿主交付失败。报告可用不等于宿主交付、审计或整臂成功。脚本保留
 `raw-session.jsonl.zstd`、宿主签名、Skill 调用次数和来源快照，并逐案例核对两臂的
 provider/model/reasoning/permission/tool catalog 是否相同。默认不把 `TUSHARE_TOKEN` 或
 `RESANITY_CREDENTIALS` 传入会话；这组 8 案例评估研究方法，不替代 Tushare 专项验证。

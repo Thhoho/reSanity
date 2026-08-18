@@ -779,6 +779,8 @@ def run_one(
 
     report_failures = report_delivery_failures(stdout)
     report_present = not report_failures
+    report_available = report_present
+    report_origin = "final_response" if report_present else "missing"
     recovered_report = None
     if report_present:
         report_path = operator_dir / "report.md"
@@ -793,6 +795,13 @@ def run_one(
                 operator_dir / "recovered-report.md",
                 review_dir / "recovered-report.md",
             )
+            shutil.copy2(
+                operator_dir / "recovered-report.md",
+                operator_dir / "report.md",
+            )
+            shutil.copy2(operator_dir / "report.md", review_dir / "report.md")
+            report_available = True
+            report_origin = "workspace_recovery"
     sources = BASE.copy_sources(workspace, operator_dir, review_dir)
 
     host_receipt = {
@@ -840,6 +849,8 @@ def run_one(
             "timed_out": timed_out,
             "session_artifacts": len(sessions),
             "recovered_report": recovered_report,
+            "report_available": report_available,
+            "report_origin": report_origin,
         },
     }
     BASE.write_json(operator_dir / "host-receipt.json", host_receipt)
@@ -891,6 +902,8 @@ def run_one(
         "exit_code": exit_code,
         "artifact_complete": not failures,
         "report_present": report_present,
+        "report_available": report_available,
+        "report_origin": report_origin,
         "recovered_report": recovered_report is not None,
         "source_files": sources,
         "resanity_invocations": resanity_invocations,

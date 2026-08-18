@@ -37,6 +37,11 @@ class ValidationContractTests(unittest.TestCase):
             "普通总结、编码、改写或一般问答",
             "即使对象尚未给全也应使用",
             "UNBENCHMARKED_CURRENT",
+            "用户可直接阅读的回答始终是第一交付物",
+            "用户提供且要求接受的信息可作为 `USER_PROVIDED` 前提",
+            "报告交付与机械审计是两条独立轴",
+            "不得改写成“报告未完成”",
+            "不建立运行状态机",
         ):
             self.assertIn(marker, skill)
         self.assertLess(len(skill.splitlines()), 100)
@@ -57,6 +62,13 @@ class ValidationContractTests(unittest.TestCase):
         self.assertIn("active_locator", formal)
         self.assertIn("profile_sha256", formal)
         self.assertIn("不得理解或改写结论", formal)
+        self.assertIn("报告先于审计", formal)
+        self.assertIn("不是状态机", formal)
+        self.assertIn("不能阻止报告本身", formal)
+        self.assertIn("先保存 `report.md`", formal)
+        self.assertIn("写成“报告未生成”", formal)
+        self.assertIn("输入 provenance", formal)
+        self.assertIn("不是 `boundary` 或 `source.kind`", formal)
 
     def test_v2_suite_has_all_layers_and_conservative_triggers(self) -> None:
         suite = json.loads(
@@ -168,6 +180,8 @@ class ValidationContractTests(unittest.TestCase):
         self.assertIn("主动研究最多使用 `N-4` 次", skill)
         self.assertIn("这 4 次不是候补研究预算", skill)
         self.assertIn("不得以待执行的工具请求、协议标记或半截表格结束", skill)
+        self.assertIn("未知、未闭合或 `INSUFFICIENT` 是报告内容", skill)
+        self.assertIn("随后才尝试来源快照、宿主收据和审计收据", skill)
         self.assertIn("来源资格当作硬边界", skill)
         self.assertIn("不得承重、不得进入承重快照", skill)
         self.assertIn("每个上游来源只保留一份规范原始快照", skill)
