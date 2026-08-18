@@ -1,6 +1,6 @@
 {
   "name": "resanity",
-  "description": "Resanity 0.2：原子主张证据研究 Skill 与可选 DeepSeek Harness 机械外壳",
+  "description": "面向散户投研的证据搜索、经济暴露链梳理与承重主张审计 Skill",
   "version": "0.2.1",
   "type": "module",
   "main": "lib/index.js",
