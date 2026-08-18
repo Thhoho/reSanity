@@ -16,6 +16,7 @@ class ValidationContractTests(unittest.TestCase):
         for marker in (
             "原子主张协议",
             "观察到什么",
+            "时态：EVENT_BY_DATE / STATE_AT_AS_OF / ABSENCE_BY_AS_OF / TIMELESS",
             "可以推出什么",
             "不能推出什么",
             "对决策的影响",
@@ -42,6 +43,9 @@ class ValidationContractTests(unittest.TestCase):
             "报告交付与机械审计是两条独立轴",
             "不得改写成“报告未完成”",
             "不建立运行状态机",
+            "交付编译（不得省略）",
+            "SINGLE_UPSTREAM_SOURCE",
+            "一个外部证据获取单元",
         ):
             self.assertIn(marker, skill)
         self.assertLess(len(skill.splitlines()), 100)
@@ -107,6 +111,23 @@ class ValidationContractTests(unittest.TestCase):
         self.assertEqual(suite["layers"]["final_ab"]["result_status"], "NOT_RUN")
         self.assertTrue(suite["layers"]["final_ab"]["task_prompts_neutral"])
         self.assertEqual(suite["method_status"], "UNBENCHMARKED_CURRENT")
+        delivery_cases = [
+            row for row in triggers if isinstance(row.get("delivery_regression"), dict)
+        ]
+        self.assertEqual(len(delivery_cases), 1)
+        self.assertEqual(delivery_cases[0]["id"], "T11-natural-investing-delivery")
+        self.assertNotIn("Resanity", delivery_cases[0]["input"])
+        self.assertEqual(
+            delivery_cases[0]["delivery_regression"],
+            {
+                "report_required": True,
+                "saved_report_required": False,
+                "root_uses_evidence_language": True,
+                "one_boundary_per_claim": True,
+                "temporal_mode_per_claim": True,
+                "one_next_evidence_object": True,
+            },
+        )
         prelayers = json.loads(
             (ROOT / "validation/v2/prelayers-receipt-template.json").read_text(
                 encoding="utf-8"
@@ -185,8 +206,8 @@ class ValidationContractTests(unittest.TestCase):
         self.assertIn("来源资格当作硬边界", skill)
         self.assertIn("不得承重、不得进入承重快照", skill)
         self.assertIn("每个上游来源只保留一份规范原始快照", skill)
-        self.assertIn("必须只有一个可执行动作", skill)
-        self.assertIn("交付前数动作谓词", skill)
+        self.assertIn("只有一项具名证据对象", skill)
+        self.assertIn("用它裁决一个承重分叉", skill)
         self.assertIn("标题、根结论、摘要、表格和主张卡", investing)
         self.assertIn("现实中是否已形成未知", investing)
         self.assertIn("无可归属暴露", investing)

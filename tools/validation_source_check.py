@@ -147,6 +147,22 @@ def validate_protocol(suite: dict[str, Any]) -> dict[str, Any]:
     }
     if not positives or not negatives or not required_reasons.issubset(reasons):
         raise ContractError("trigger matrix lacks required positive/negative categories")
+    delivery_regressions = [
+        case for case in trigger_cases if isinstance(case.get("delivery_regression"), dict)
+    ]
+    if len(delivery_regressions) != 1:
+        raise ContractError("trigger matrix must contain one natural delivery regression")
+    delivery_contract = delivery_regressions[0]["delivery_regression"]
+    expected_delivery_contract = {
+        "report_required": True,
+        "saved_report_required": False,
+        "root_uses_evidence_language": True,
+        "one_boundary_per_claim": True,
+        "temporal_mode_per_claim": True,
+        "one_next_evidence_object": True,
+    }
+    if delivery_contract != expected_delivery_contract:
+        raise ContractError("natural delivery regression contract is incomplete")
 
     identity_cases = layers["install_identity"].get("cases")
     if not isinstance(identity_cases, list) or len(identity_cases) < 4:
@@ -219,6 +235,7 @@ def validate_protocol(suite: dict[str, Any]) -> dict[str, Any]:
         "layers": list(layers),
         "semantic_case_counts": semantic_counts,
         "trigger_cases": len(trigger_cases),
+        "delivery_regression_cases": len(delivery_regressions),
         "identity_cases": len(identity_cases),
         "final_ab_cases": len(ab_ids),
         "final_ab_baseline_prompt": baseline_prompt,

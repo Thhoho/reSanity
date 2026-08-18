@@ -49,7 +49,21 @@
         {"id": "T07-coding", "input": "修复这个 JavaScript 数组越界错误并运行测试。", "expected_invocation": false, "reason": "ordinary-coding"},
         {"id": "T08-rewrite", "input": "把这段邮件改得更礼貌。", "expected_invocation": false, "reason": "ordinary-writing"},
         {"id": "T09-translation", "input": "把这句话翻译成英文。", "expected_invocation": false, "reason": "ordinary-translation"},
-        {"id": "T10-general-qa", "input": "解释一下 TCP 三次握手。", "expected_invocation": false, "reason": "ordinary-qa"}
+        {"id": "T10-general-qa", "input": "解释一下 TCP 三次握手。", "expected_invocation": false, "reason": "ordinary-qa"},
+        {
+          "id": "T11-natural-investing-delivery",
+          "input": "研究协鑫能科（002015）的‘绿电+算力’布局是否已经成型。我的观点是：协鑫能科拥有能源资产和售电能力，可能通过绿电降低智算中心成本，并进一步形成算力运营、调度优化或 AI 客户服务收入。请把这当作待验证假设，不要预设成立。请重点挖掘：1. 已备案、在建、投运的算力项目及实际主导方；2. 绿电来源究竟是自有电站、市场化交易、绿证还是物理直连；3. 哪些只是规划、框架协议或产业链共现。",
+          "expected_invocation": true,
+          "reason": "investment-auto",
+          "delivery_regression": {
+            "report_required": true,
+            "saved_report_required": false,
+            "root_uses_evidence_language": true,
+            "one_boundary_per_claim": true,
+            "temporal_mode_per_claim": true,
+            "one_next_evidence_object": true
+          }
+        }
       ]
     },
     "install_identity": {

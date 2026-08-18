@@ -140,7 +140,7 @@ headless profile 复制出的 profile：`headless-baseline` 不得安装或激�
 bundle 和由该 bundle 生成的顶层 `id: resanity` 配置项。脚本不会安装、复制或改写 profile。DSH 用户 Skill
 `$DSH_HOME/skills/resanity/SKILL.md` 也必须不存在，否则两臂都会被污染。
 
-在最终 A/B 前，用同一 B/R profile 运行 24 个一次性前置会话：
+在最终 A/B 前，用同一 B/R profile 运行 25 个一次性前置会话。其中 `T11-natural-investing-delivery` 保留自然投资提问，不显式提及 Resanity，用于人工复核自动触发、聊天内报告、否定语义、单边界、时态和唯一证据对象：
 
 ```sh
 python3 validation/v2/run_dsh_prelayers.py \

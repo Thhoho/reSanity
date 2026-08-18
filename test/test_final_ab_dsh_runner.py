@@ -39,6 +39,20 @@ class DshFinalAbRunnerTests(unittest.TestCase):
         cls.runner = load_runner()
         cls.prelayer = load_prelayer()
 
+    def test_prelayer_plan_keeps_natural_delivery_regression(self) -> None:
+        layers = self.prelayer.plan(self.runner.BASE.load_suite())
+        self.assertEqual(sum(len(rows) for rows in layers.values()), 25)
+        delivery = [
+            case
+            for case in layers["trigger"]
+            if case["id"] == "T11-natural-investing-delivery"
+        ]
+        self.assertEqual(len(delivery), 1)
+        self.assertTrue(delivery[0]["expected_invocation"])
+        self.assertFalse(
+            delivery[0]["delivery_regression"]["saved_report_required"]
+        )
+
     def make_profile_pair(self, raw: str) -> SimpleNamespace:
         root = Path(raw)
         dsh_home = root / "dsh-home"

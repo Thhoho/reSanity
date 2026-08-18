@@ -43,8 +43,8 @@ def plan(suite: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     result["trigger"] = [
         {**case, "layer": "trigger"} for case in layers["trigger"]["cases"]
     ]
-    if sum(len(rows) for rows in result.values()) != 24:
-        raise PrelayerError("DSH prelayer plan must contain exactly 24 sessions")
+    if sum(len(rows) for rows in result.values()) != 25:
+        raise PrelayerError("DSH prelayer plan must contain exactly 25 sessions")
     return result
 
 
@@ -408,12 +408,12 @@ def run_anchor_groups(
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--run", action="store_true", help="launch 24 paid DSH sessions")
+    parser.add_argument("--run", action="store_true", help="launch 25 paid DSH sessions")
     parser.add_argument(
         "--case",
         action="append",
         default=[],
-        help="run only this case id; repeat for a targeted bridge (default: all 24)",
+        help="run only this case id; repeat for a targeted bridge (default: all 25)",
     )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--candidate-root", type=Path, default=ROOT)
