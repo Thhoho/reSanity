@@ -307,6 +307,9 @@ def validate_tushare_packet(request: dict[str, Any], packet: dict[str, Any]) -> 
         raise ValidationError("live feature check requires provider=TUSHARE")
     if packet.get("status") != "OBSERVATIONS_READY" or packet.get("provider") != "TUSHARE":
         raise ValidationError(f"Tushare acquisition not ready: {packet.get('status')}")
+    expected_policy = normalized_request.get("provider_policy")
+    if not isinstance(expected_policy, dict) or packet.get("provider_policy") != expected_policy:
+        raise ValidationError("market provider policy mismatch")
     if secret_like_keys(packet):
         raise ValidationError("Tushare packet contains credential-like keys")
 
@@ -331,6 +334,8 @@ def validate_tushare_packet(request: dict[str, Any], packet: dict[str, Any]) -> 
     receipt = packet.get("acquisition_receipt")
     if not isinstance(receipt, dict):
         raise ValidationError("acquisition receipt missing")
+    if receipt.get("provider_policy") != expected_policy:
+        raise ValidationError("acquisition receipt provider policy mismatch")
     if receipt.get("request_sha256") != canonical_hash(normalized_request):
         raise ValidationError("request hash mismatch")
     expected_series_hashes = {
@@ -343,6 +348,7 @@ def validate_tushare_packet(request: dict[str, Any], packet: dict[str, Any]) -> 
         "schema_version",
         "request_sha256",
         "provider",
+        "provider_policy",
         "provider_version",
         "research_as_of_date",
         "market_session_date",
@@ -361,6 +367,7 @@ def validate_tushare_packet(request: dict[str, Any], packet: dict[str, Any]) -> 
         "as_of_date": normalized_request["as_of_date"],
         "adjustment": packet.get("adjustment"),
         "receipt_id": receipt.get("receipt_id"),
+        "provider_policy": expected_policy,
         "provider_endpoints": receipt.get("provider_endpoints", []),
         "warnings": receipt.get("warnings", []),
         "series": series_summary,

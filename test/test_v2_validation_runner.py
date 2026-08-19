@@ -93,6 +93,7 @@ class V2ValidationRunnerTests(unittest.TestCase):
         }
         market = self.runner.load_market_module()
         normalized = market._request(request)
+        provider_policy = normalized["provider_policy"]
         candidate = [{"date": "2026-07-30", "close": 10.0}, {"date": "2026-07-31", "close": 10.2}]
         benchmark = [{"date": "2026-07-30", "close": 100.0}, {"date": "2026-07-31", "close": 101.0}]
         series_hashes = {
@@ -103,6 +104,7 @@ class V2ValidationRunnerTests(unittest.TestCase):
             "schema_version": "resanity.free-market-acquisition-receipt.v1",
             "request_sha256": self.runner.canonical_hash(normalized),
             "provider": "TUSHARE",
+            "provider_policy": provider_policy,
             "provider_version": "test",
             "research_as_of_date": "2026-07-31",
             "market_session_date": "2026-07-31",
@@ -115,6 +117,7 @@ class V2ValidationRunnerTests(unittest.TestCase):
             "status": "OBSERVATIONS_READY",
             "as_of_date": "2026-07-31",
             "provider": "TUSHARE",
+            "provider_policy": provider_policy,
             "adjustment": "QFQ_AS_OF_CUTOFF",
             "candidate": {"observations": candidate},
             "benchmark": {"observations": benchmark},

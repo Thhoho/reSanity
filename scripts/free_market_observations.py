@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Collect a narrow, frozen A-share observation packet from one selected source.
 
-This adapter deliberately does not scan the full market, choose a fallback, or
-admit evidence.  The caller selects exactly one provider for a bounded request.
-The output is compatible with the report audit flow and carries a
-content-addressed acquisition receipt.
+This adapter resolves exactly one provider before acquisition and never falls
+back after a provider attempt.  ``AUTO`` applies the local operational priority
+policy without probing the network.  The output is compatible with the report
+audit flow and carries a content-addressed acquisition receipt.
 """
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from datetime import date, datetime, timedelta, timezone
 import hashlib
 import importlib
 from importlib import metadata
+from importlib.util import find_spec
 import io
 import json
 import multiprocessing
@@ -27,6 +28,9 @@ from urllib.parse import urlparse
 
 SCHEMA_VERSION = "resanity.free-market-observations.v1"
 RECEIPT_SCHEMA = "resanity.free-market-acquisition-receipt.v1"
+PROVIDER_POLICY_VERSION = "resanity.market-source-policy.v1"
+AUTO_PROVIDER = "AUTO"
+PROVIDER_PRIORITY = ("TUSHARE", "BAOSTOCK", "AKSHARE_TENCENT")
 SUPPORTED_PROVIDERS = frozenset({"TUSHARE", "BAOSTOCK", "AKSHARE_TENCENT", "CSV"})
 SUPPORTED_EXCHANGES = frozenset({"XSHG", "XSHE"})
 SUPPORTED_ASSET_TYPES = frozenset({"EQUITY", "INDEX"})
@@ -124,12 +128,77 @@ def _asset(raw, label, provider):
     return result
 
 
+def _module_available(name):
+    try:
+        return find_spec(name) is not None
+    except (ImportError, ModuleNotFoundError, ValueError):
+        return False
+
+
+def _local_provider_readiness():
+    """Return non-secret local readiness used only for one-shot selection."""
+    return {
+        "TUSHARE": bool(resolve_tushare_token()) and _module_available("tushare"),
+        "BAOSTOCK": _module_available("baostock"),
+        "AKSHARE_TENCENT": _module_available("akshare"),
+    }
+
+
+def _select_provider(raw):
+    requested = _text(raw.get("provider")).upper() or AUTO_PROVIDER
+    if requested not in SUPPORTED_PROVIDERS | {AUTO_PROVIDER}:
+        raise AcquisitionError("REQUEST_REJECTED", "provider_unsupported")
+
+    readiness = _local_provider_readiness()
+    override_reason = _text(raw.get("provider_override_reason"))
+    if requested == AUTO_PROVIDER:
+        selected = next(
+            (provider for provider in PROVIDER_PRIORITY if readiness.get(provider)),
+            None,
+        )
+        if selected is None:
+            raise AcquisitionError(
+                "PROVIDER_UNAVAILABLE", "no_ranked_provider_locally_ready"
+            )
+        selection = "AUTO_HIGHEST_LOCALLY_READY"
+    elif requested == "CSV":
+        if not override_reason:
+            raise AcquisitionError(
+                "REQUEST_REJECTED", "provider_override_reason_required:CSV"
+            )
+        selected = requested
+        selection = "EXPLICIT_MANUAL_SOURCE"
+    else:
+        selected = requested
+        rank = PROVIDER_PRIORITY.index(selected)
+        higher_ready = [
+            provider
+            for provider in PROVIDER_PRIORITY[:rank]
+            if readiness.get(provider)
+        ]
+        if higher_ready and not override_reason:
+            raise AcquisitionError(
+                "REQUEST_REJECTED",
+                f"higher_priority_provider_available:{higher_ready[0]}",
+            )
+        selection = "EXPLICIT_OVERRIDE" if higher_ready else "EXPLICIT_PROVIDER"
+
+    policy = {
+        "schema_version": PROVIDER_POLICY_VERSION,
+        "requested_provider": requested,
+        "selected_provider": selected,
+        "priority": list(PROVIDER_PRIORITY),
+        "selection": selection,
+    }
+    if override_reason:
+        policy["override_reason"] = override_reason
+    return selected, policy
+
+
 def _request(raw):
     if not isinstance(raw, dict):
         raise AcquisitionError("REQUEST_REJECTED", "request_must_be_object")
-    provider = _text(raw.get("provider")).upper()
-    if provider not in SUPPORTED_PROVIDERS:
-        raise AcquisitionError("REQUEST_REJECTED", "provider_must_be_explicit")
+    provider, provider_policy = _select_provider(raw)
     as_of = _iso_date(raw.get("as_of_date"), "as_of_date")
     lookback = raw.get("lookback_calendar_days", 180)
     if isinstance(lookback, bool) or not isinstance(lookback, int):
@@ -141,6 +210,7 @@ def _request(raw):
         "as_of_date": as_of.isoformat(),
         "lookback_calendar_days": lookback,
         "provider": provider,
+        "provider_policy": provider_policy,
         "adjustment": "QFQ_AS_OF_CUTOFF" if provider == "TUSHARE" else "NONE",
         "candidate": _asset(raw.get("candidate"), "candidate", provider),
         "benchmark": _asset(raw.get("benchmark"), "benchmark", provider),
@@ -597,8 +667,7 @@ def _collect_tushare(request, cutoff, start):
     }
 
 
-def collect(raw_request, *, now=None):
-    request = _request(raw_request)
+def _collect_request(request, *, now=None):
     cutoff = date.fromisoformat(request["as_of_date"])
     start = cutoff - timedelta(days=request["lookback_calendar_days"])
     provider = request["provider"]
@@ -625,6 +694,7 @@ def collect(raw_request, *, now=None):
         "schema_version": RECEIPT_SCHEMA,
         "request_sha256": _canonical_hash(request),
         "provider": provider,
+        "provider_policy": request["provider_policy"],
         "provider_version": provider_meta.get("provider_version", "UNKNOWN"),
         "research_as_of_date": request["as_of_date"],
         "market_session_date": candidate_session,
@@ -647,6 +717,7 @@ def collect(raw_request, *, now=None):
         "status": "OBSERVATIONS_READY",
         "as_of_date": request["as_of_date"],
         "provider": provider,
+        "provider_policy": request["provider_policy"],
         "adjustment": request["adjustment"],
         "candidate": series["candidate"],
         "benchmark": series["benchmark"],
@@ -661,6 +732,10 @@ def collect(raw_request, *, now=None):
     }
 
 
+def collect(raw_request, *, now=None):
+    return _collect_request(_request(raw_request), now=now)
+
+
 def _render(value):
     return json.dumps(value, ensure_ascii=False, indent=2) + "\n"
 
@@ -670,9 +745,11 @@ def main(argv=None):
     parser.add_argument("--input", required=True, help="bounded acquisition request JSON")
     parser.add_argument("--output", help="observation packet or failure receipt JSON")
     args = parser.parse_args(argv)
+    normalized_request = None
     try:
         raw_request = json.loads(Path(args.input).read_text(encoding="utf-8"))
-        result = collect(raw_request)
+        normalized_request = _request(raw_request)
+        result = _collect_request(normalized_request)
         exit_code = 0
     except (OSError, json.JSONDecodeError) as exc:
         result = {"schema_version": SCHEMA_VERSION, "status": "REQUEST_REJECTED", "reason": type(exc).__name__}
@@ -684,6 +761,13 @@ def main(argv=None):
             "reason": exc.reason,
             "fallback_attempted": False,
         }
+        if normalized_request is not None:
+            selected = normalized_request["provider"]
+            result.update({
+                "provider": selected,
+                "provider_policy": normalized_request["provider_policy"],
+                "attempted_providers": [selected],
+            })
         exit_code = 2
     rendered = _render(result)
     if args.output:

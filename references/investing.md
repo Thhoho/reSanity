@@ -81,6 +81,12 @@ python3 <skill-root>/scripts/ashare_disclosures.py --ticker <六位代码> --as-
 
 长度服从信息量。投资语义只属于本 profile，不得成为非投资任务的默认输出合同。
 
-## 可选市场数据脚本
+## 数据源资格与采集优先级
 
-需要 A 股官方披露索引时先运行 `scripts/ashare_disclosures.py`；需要价格硬锚时可运行 `scripts/free_market_observations.py`。输入、输出与凭据边界以脚本帮助为准；输出只提供观察，不自动形成推荐。Tushare token 不进入提示、报告、锚或仓库。通用原始数据可按需使用 `scripts/tier1_providers.py`。
+先按主张类型判断来源资格，不建立跨类型的单一总排名：公司事项、现状或范围内未发现优先监管、交易所和发行人原件；A 股价格硬锚优先带日期的交易所或指数发布方原件；海外经营数据优先公司 IR、监管文件和官方统计。聚合行情、新闻和搜索结果不能因为更易取得而越级替代原件。
+
+没有已定位的合格价格原件时，A 股日线与估值的自动采集固定使用 `scripts/free_market_observations.py`，新请求省略 `provider` 或写 `AUTO`。脚本按本地凭据与依赖执行一次 `TUSHARE > BAOSTOCK > AKSHARE_TENCENT` 选择；Tushare 可用时必须先选 Tushare。`CSV` 是人工传输通道，不是固定证据等级，其资格由上游来源决定。显式选择较低优先级来源必须填写 `provider_override_reason`。
+
+选择只发生一次且不探测网络；选中来源后若出现权限、网络、空数据或时态失败，保留失败回执并降低对应证据边界，不自动尝试下一来源。实时网页行情只能标为 `LIVE_CURRENT`，不得承重 `EVENT_BY_DATE`、`STATE_AT_AS_OF` 或历史涨跌主张。Tushare token 只由脚本读取，不进入提示、报告、锚、回执或仓库。
+
+需要 A 股官方披露索引时仍先运行 `scripts/ashare_disclosures.py`；通用原始数据可按需使用 `scripts/tier1_providers.py`。任何脚本输出只提供观察，不自动形成推荐或改变主张边界。

@@ -157,7 +157,7 @@ python3 tools/research_check.py path/to/report.receipt.json \
 dsh plugin --profile headless add /absolute/path/resanity-0.2.1.tgz
 ```
 
-安装成功后 `resanity` 应自动追加到该 profile 的 `dsh.profile.bundles`。配置中的 `systemNotifications` 默认 `false`，只有用户显式开启时才调用操作系统通知。Tushare 只是投资 profile 的可选价格数据入口，不进入核心研究协议。
+安装成功后 `resanity` 应自动追加到该 profile 的 `dsh.profile.bundles`。配置中的 `systemNotifications` 默认 `false`，只有用户显式开启时才调用操作系统通知。Tushare 不进入核心研究协议，但在凭据与依赖可用时是 A 股日线自动采集的默认最高优先级来源；采集失败不会隐藏回退到其他来源。
 
 ## 验证状态
 
@@ -193,7 +193,7 @@ env npm_config_cache=/private/tmp/resanity-npm-cache npm pack --dry-run
 
 - **它能告诉我某只股票会涨吗？** 不能。它会告诉你当前价格已经相信了什么、要让上涨逻辑成立哪些事实必须为真、哪条尚未闭合，以及下一验证是什么。
 - **证据不足也要给候选吗？** 不需要。没有可靠载体、价格锚或经济暴露闭环时，保留观察或不动作比强行推荐更符合方法目标。
-- **没有 Tushare token 能用吗？** 能。Tushare 只是可选价格数据源，不影响核心研究协议。
+- **没有 Tushare token 能用吗？** 能。价格采集请求使用 `AUTO` 时会选择本地可用的下一来源；一旦选定后发生网络、权限或数据失败，不会自动回退。缺少价格硬锚时相应结论必须降级。
 - **数据存在哪里？** 认知锚和决策日志都是工作目录中的明文文件，可检查、可迁移，没有云端语义数据库。
 - **它是投资顾问吗？** 不是。它是研究方法、认知账本和机械审计薄壳。
 
