@@ -233,6 +233,101 @@ class DshFinalAbRunnerTests(unittest.TestCase):
         self.assertEqual(metrics["web_search"], 1)
         self.assertEqual(metrics["budget_denied_tool_calls"], 1)
 
+    def test_command_nonzero_exit_is_visible_when_outer_result_is_not_error(self) -> None:
+        events = [
+            {
+                "type": "tool/call",
+                "data": {
+                    "callId": "bash-1",
+                    "name": "bash",
+                    "arguments": {"command": "curl official.example"},
+                },
+            },
+            {
+                "type": "tool/result",
+                "data": {
+                    "isError": False,
+                    "message": {
+                        "source": {"kind": "tool", "callId": "bash-1"},
+                        "content": [
+                            {"type": "text", "text": "fetch failed\n[exit code: 1]"}
+                        ],
+                    },
+                },
+            },
+        ]
+        metrics = self.runner.parse_dsh_metrics(events)
+        self.assertEqual(metrics["tool_result_failures"], 1)
+        self.assertEqual(metrics["tool_result_failures_by_name"], {"bash": 1})
+        self.assertEqual(
+            metrics["tool_result_failure_reasons"], {"nonzero_exit_code": 1}
+        )
+        self.assertTrue(metrics["tool_trace"][1]["failed"])
+
+    def test_t11_trace_requires_completed_profile_read_then_official_index(self) -> None:
+        contract = {
+            "profile_loaded_before_research": True,
+            "official_index_first_for_ashare": True,
+        }
+        good = [
+            {
+                "type": "tool/call",
+                "data": {
+                    "callId": "read-1",
+                    "name": "read",
+                    "arguments": {"path": "/skill/references/investing.md"},
+                },
+            },
+            {
+                "type": "tool/result",
+                "data": {
+                    "message": {
+                        "source": {"callId": "read-1"},
+                        "content": [{"type": "text", "text": "profile"}],
+                    }
+                },
+            },
+            {
+                "type": "tool/call",
+                "data": {
+                    "callId": "bash-1",
+                    "name": "bash",
+                    "arguments": {
+                        "command": "python3 /skill/scripts/ashare_disclosures.py --ticker 002015 --as-of 2026-08-19"
+                    },
+                },
+            },
+        ]
+        metrics = self.runner.parse_dsh_metrics(good)
+        self.assertEqual(self.runner.trace_contract_failures(metrics, contract), [])
+        receipt_trace = self.runner.receipt_tool_trace(metrics)
+        self.assertNotIn("arguments", receipt_trace[0])
+        self.assertEqual(
+            receipt_trace[0]["argument_markers"], ["investing_profile"]
+        )
+        self.assertEqual(
+            receipt_trace[2]["argument_markers"], ["ashare_disclosure_index"]
+        )
+
+        parallel = [good[0], good[2], good[1]]
+        failures = self.runner.trace_contract_failures(
+            self.runner.parse_dsh_metrics(parallel), contract
+        )
+        self.assertIn("delivery_profile_not_loaded_before_research", failures)
+
+        search_first = [good[0], good[1], {
+            "type": "tool/call",
+            "data": {
+                "callId": "web-1",
+                "name": "web_search",
+                "arguments": {"query": "002015 算力"},
+            },
+        }]
+        failures = self.runner.trace_contract_failures(
+            self.runner.parse_dsh_metrics(search_first), contract
+        )
+        self.assertIn("delivery_official_index_not_first", failures)
+
     def test_report_delivery_shape_rejects_tool_protocol_leaks(self) -> None:
         leaked = (
             "预算接近上限，随后交付。\n"
@@ -261,6 +356,85 @@ class DshFinalAbRunnerTests(unittest.TestCase):
         self.assertEqual(
             self.runner.report_delivery_failures(process_only),
             ["report_process_only"],
+        )
+
+    def test_t11_delivery_contract_is_executed_against_report_semantics(self) -> None:
+        contract = {
+            "report_required": True,
+            "saved_report_required": False,
+            "root_uses_evidence_language": True,
+            "one_boundary_per_claim": True,
+            "temporal_mode_per_claim": True,
+            "one_next_evidence_object": True,
+        }
+        good = """## 根结论
+
+截至 2026-08-19，公开证据支持公司曾披露能源与算力合作；尚未闭合项目投运、供电方式和可归属收入。现实中是否已经形成绿电加算力业务未知，因此当前为 NOT_EVALUABLE。
+
+## 承重主张卡
+
+### C1
+主张：公司曾披露一项算力合作事件。
+时态：EVENT_BY_DATE
+观察到什么：2025-05-01 的公司公告写明签署合作协议。
+可以推出什么：截至公告日合作事件已披露。
+不能推出什么：不能推出项目已经投运或产生收入。
+对决策的影响：保持不确定。
+证据边界（针对“主张”整句）：INSUFFICIENT
+
+## 唯一下一验证
+
+获取公司 2026 年半年度报告，用它核验具名项目是否已投运并产生可归属收入。
+"""
+        self.assertEqual(
+            self.runner.delivery_contract_failures(good, contract), []
+        )
+
+        bad = good.replace(
+            "截至 2026-08-19，公开证据支持公司曾披露能源与算力合作；尚未闭合项目投运、供电方式和可归属收入。现实中是否已经形成绿电加算力业务未知，因此当前为 NOT_EVALUABLE。",
+            "协鑫能科的绿电加算力布局未形成，因此假设不成立。",
+        ).replace("EVENT_BY_DATE", "STATE_AT_AS_OF")
+        failures = self.runner.delivery_contract_failures(bad, contract)
+        self.assertIn("delivery_root_evidence_language", failures)
+        self.assertIn("delivery_root_reality_negation", failures)
+        self.assertIn("delivery_claim_state_without_coverage:C1", failures)
+
+    def test_t11_absence_mode_requires_named_corpus_and_date_range(self) -> None:
+        report = """## 根结论
+截至 2026-08-19，公开证据支持已披露合作；尚未闭合项目状态。现实中是否已经形成业务未知，因此当前为 NOT_EVALUABLE。
+## 主张卡
+### C1
+主张：范围内未发现项目投运公告。
+时态：ABSENCE_BY_AS_OF
+观察到什么：没有找到。
+可以推出什么：无。
+不能推出什么：不能推出不存在。
+对决策的影响：保持不确定。
+证据边界（针对“主张”整句）：INSUFFICIENT
+## 唯一下一验证
+获取公司 2026 年半年度报告，用它核验项目状态。
+"""
+        failures = self.runner.delivery_contract_failures(
+            report,
+            {
+                "root_uses_evidence_language": True,
+                "one_boundary_per_claim": True,
+                "temporal_mode_per_claim": True,
+                "one_next_evidence_object": True,
+            },
+        )
+        self.assertIn("delivery_claim_absence_without_corpus:C1", failures)
+
+    def test_next_evidence_object_allows_nested_field_but_rejects_multiple_artifacts(self) -> None:
+        self.assertTrue(
+            self.runner.one_next_evidence_object(
+                "获取公司半年度报告中的项目收入明细，用它核验经济暴露。"
+            )
+        )
+        self.assertFalse(
+            self.runner.one_next_evidence_object(
+                "同时索取项目合同、发票和结算单，用它们核验收入。"
+            )
         )
 
     def test_workspace_report_is_recovered_without_becoming_host_success(self) -> None:
@@ -342,6 +516,137 @@ class DshFinalAbRunnerTests(unittest.TestCase):
                 (artifact / "report.md").read_text(encoding="utf-8"),
                 "# 根结论\n\n已交付可读报告。\n",
             )
+
+    def test_prelayer_run_session_consumes_t11_delivery_and_trace_contract(self) -> None:
+        report = """## 根结论
+截至 2026-08-19，公开证据支持公司披露合作；尚未闭合项目状态和收入。现实中是否已经形成业务未知，因此当前为 NOT_EVALUABLE。
+## 主张卡
+### C1
+主张：公司披露过合作事件。
+时态：EVENT_BY_DATE
+观察到什么：2026-01-01 公司公告披露合作。
+可以推出什么：合作事件被披露。
+不能推出什么：不能推出项目投运。
+对决策的影响：保持不确定。
+证据边界（针对“主张”整句）：INSUFFICIENT
+## 唯一下一验证
+获取公司半年度报告，用它核验项目投运状态。
+"""
+        contract = {
+            "report_required": True,
+            "saved_report_required": False,
+            "root_uses_evidence_language": True,
+            "one_boundary_per_claim": True,
+            "temporal_mode_per_claim": True,
+            "one_next_evidence_object": True,
+            "profile_loaded_before_research": True,
+            "official_index_first_for_ashare": True,
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            output = root / "output"
+            workspace = output / "workspaces" / "T11"
+            artifact = output / "cases" / "T11"
+            args = SimpleNamespace(
+                output=output,
+                dsh_bin="unused-dsh",
+                dsh_home=root / "dsh-home",
+                candidate_profile="headless-resanity",
+                max_tool_calls=30,
+                max_web_searches=15,
+                max_non_cached_input_tokens=150_000,
+                max_wall_seconds=900,
+                zstd_bin="unused-zstd",
+                expected_provider="deepseek-official",
+                expected_model="deepseek-v4-pro",
+                expected_reasoning_effort="max",
+            )
+
+            def completed_run(*_args, **_kwargs):
+                session = artifact / "session-store" / "one" / "session.jsonl.zstd"
+                session.parent.mkdir(parents=True)
+                session.write_bytes(b"fixture")
+                return SimpleNamespace(returncode=0, stdout=report, stderr="")
+
+            events = [
+                {"type": "session", "id": "session-1", "cwd": str(workspace)},
+                {"type": "permission/preset", "data": {"preset": "workspace-write"}},
+                {"type": "sandbox/mode", "data": {"mode": "workspace-write"}},
+                {"type": "approval/policy", "data": {"policy": "ask"}},
+                {
+                    "type": "request/header",
+                    "data": {
+                        "header": {
+                            "config": {
+                                "provider": "deepseek-official",
+                                "model": "deepseek-v4-pro",
+                                "reasoningEffort": "max",
+                            },
+                            "tools": [
+                                {"name": "skill"},
+                                {"name": "read"},
+                                {"name": "bash"},
+                            ],
+                        }
+                    },
+                },
+                {
+                    "type": "tool/call",
+                    "data": {
+                        "callId": "skill-1",
+                        "name": "skill",
+                        "arguments": json.dumps({"name": "resanity"}),
+                    },
+                },
+                {
+                    "type": "tool/call",
+                    "data": {
+                        "callId": "read-1",
+                        "name": "read",
+                        "arguments": {"path": "/skill/references/investing.md"},
+                    },
+                },
+                {
+                    "type": "tool/result",
+                    "data": {
+                        "message": {
+                            "source": {"callId": "read-1"},
+                            "content": [{"type": "text", "text": "profile"}],
+                        }
+                    },
+                },
+                {
+                    "type": "tool/call",
+                    "data": {
+                        "callId": "bash-1",
+                        "name": "bash",
+                        "arguments": {
+                            "command": "python3 /skill/scripts/ashare_disclosures.py --ticker 002015 --as-of 2026-08-19"
+                        },
+                    },
+                },
+            ]
+            with mock.patch.object(
+                self.prelayer.subprocess, "run", side_effect=completed_run
+            ), mock.patch.object(
+                self.prelayer.DSH, "read_dsh_events", return_value=events
+            ):
+                row = self.prelayer.run_session(
+                    args=args,
+                    case={
+                        "id": "T11",
+                        "layer": "trigger",
+                        "expected_invocation": True,
+                        "delivery_regression": contract,
+                    },
+                    prompt="natural investing prompt",
+                    workspace=workspace,
+                    artifact=artifact,
+                )
+
+            self.assertTrue(row["host_complete"])
+            self.assertEqual(row["delivery_contract_failures"], [])
+            self.assertEqual(row["trace_contract_failures"], [])
 
 
 if __name__ == "__main__":

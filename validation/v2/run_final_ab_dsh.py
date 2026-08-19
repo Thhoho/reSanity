@@ -485,6 +485,38 @@ PROCESS_ONLY_MARKERS = (
     "不再重试",
 )
 REPORT_CONTENT_MARKERS = ("#", "[C", "根结论", "一句话结论", "主张：")
+BOUNDARY_TOKENS = (
+    "FACT",
+    "SINGLE_SOURCE",
+    "INFERENCE",
+    "HYPOTHESIS",
+    "NO_RESULT",
+    "INSUFFICIENT",
+)
+TEMPORAL_TOKENS = (
+    "EVENT_BY_DATE",
+    "STATE_AT_AS_OF",
+    "ABSENCE_BY_AS_OF",
+    "TIMELESS",
+)
+REALITY_NEGATIONS = (
+    "不成立",
+    "未形成",
+    "不存在",
+    "没有项目",
+    "闭环未闭",
+    "为空",
+    "尚无收入",
+)
+CLAIM_START = re.compile(
+    r"^\s*(?:#{2,6}\s*)?(?:\[?C\d+\]?|主张(?:卡)?\s*\[?C?\d+\]?)\s*(?:[：:｜|—-].*)?$",
+    re.IGNORECASE,
+)
+INLINE_CLAIM_START = re.compile(
+    r"^\s*\*{0,2}主张\s*C?\d+\s*(?:[（(](?:EVENT_BY_DATE|STATE_AT_AS_OF|ABSENCE_BY_AS_OF|TIMELESS)[）)])?\*{0,2}\s*[：:].+$",
+    re.IGNORECASE,
+)
+EXIT_CODE = re.compile(r"\[exit code:\s*(-?\d+)\]", re.IGNORECASE)
 
 
 def report_delivery_failures(report: str) -> list[str]:
@@ -501,6 +533,254 @@ def report_delivery_failures(report: str) -> list[str]:
     ):
         return ["report_process_only"]
     return []
+
+
+def markdown_section(report: str, title_pattern: str) -> str:
+    """Return one Markdown section body, or a labeled inline block."""
+    lines = report.splitlines()
+    heading = re.compile(r"^\s*(#{1,6})\s+(.+?)\s*$")
+    wanted = re.compile(title_pattern, re.IGNORECASE)
+    for index, line in enumerate(lines):
+        match = heading.match(line)
+        if not match or not wanted.search(match.group(2)):
+            continue
+        end = len(lines)
+        for candidate in range(index + 1, len(lines)):
+            next_heading = heading.match(lines[candidate])
+            if next_heading:
+                end = candidate
+                break
+        return "\n".join(lines[index + 1 : end]).strip()
+    inline = re.search(
+        rf"(?ms)^\s*{title_pattern}\s*[：:]\s*(.+?)(?=^\s*(?:主张|唯一.*下一)|\Z)",
+        report,
+    )
+    return inline.group(1).strip() if inline else ""
+
+
+def claim_blocks(report: str) -> list[str]:
+    lines = report.splitlines()
+    starts = [
+        index
+        for index, line in enumerate(lines)
+        if CLAIM_START.match(line) or INLINE_CLAIM_START.match(line)
+    ]
+    return [
+        "\n".join(lines[start : starts[offset + 1] if offset + 1 < len(starts) else len(lines)])
+        for offset, start in enumerate(starts)
+    ]
+
+
+def one_next_evidence_object(section: str) -> bool:
+    if not section.strip():
+        return False
+    object_families = (
+        r"年报|年度报告|半年报|半年度报告|季报|季度报告",
+        r"公告索引|披露索引|公告清单|披露清单",
+        r"备案文件|备案清单|项目备案",
+        r"合同(?:原件)?",
+        r"发票",
+        r"结算单|电费账单",
+        r"验收(?:文件|报告|单|证明)",
+        r"绿证(?:注销|交易)?记录",
+        r"物理直连(?:批复|协议)",
+        r"访谈(?:记录)?",
+        r"客户确认",
+        r"收入明细|项目台账",
+    )
+    actions = list(re.finditer(r"获取|读取|调取|索取|下载|查阅|申请|拿到", section))
+    if len(actions) != 1:
+        return False
+    acquired = re.split(r"，?用它|，?以此|，?用于|，?来核验|，?核验|，?裁决", section[actions[0].end() :], maxsplit=1)[0]
+    matches = []
+    for pattern in object_families:
+        match = re.search(pattern, acquired)
+        if match:
+            matches.append(match)
+    if not matches:
+        return False
+    matches.sort(key=lambda match: match.start())
+    if len(matches) == 1:
+        return True
+    between = acquired[matches[0].end() : matches[-1].start()]
+    nested = re.search(r"中(?:的|所列|披露)|内(?:的|所列|披露)|所附", between)
+    separate = re.search(r"、|以及|和|及|与|另|同时", between)
+    return bool(nested) and not separate
+
+
+def delivery_contract_failures(
+    report: str,
+    contract: dict[str, Any],
+    *,
+    saved_report: bool = False,
+) -> list[str]:
+    """Execute the natural-delivery regression contract against a real report."""
+    failures: list[str] = []
+    if contract.get("report_required"):
+        failures.extend(report_delivery_failures(report))
+    if contract.get("saved_report_required") and not saved_report:
+        failures.append("delivery_saved_report_missing")
+    if not report.strip():
+        return list(dict.fromkeys(failures))
+
+    if contract.get("root_uses_evidence_language"):
+        root = markdown_section(report, r"根结论|一句话结论")
+        required = ("公开证据支持", "尚未闭合", "现实中", "未知", "NOT_EVALUABLE")
+        if not root or any(token not in root for token in required):
+            failures.append("delivery_root_evidence_language")
+        if any(token in root for token in REALITY_NEGATIONS):
+            failures.append("delivery_root_reality_negation")
+
+    blocks = claim_blocks(report)
+    if (contract.get("one_boundary_per_claim") or contract.get("temporal_mode_per_claim")) and not 1 <= len(blocks) <= 5:
+        failures.append("delivery_claim_cards_missing")
+    for number, block in enumerate(blocks, start=1):
+        if contract.get("one_boundary_per_claim"):
+            boundary_lines = [
+                line for line in block.splitlines() if re.search(r"证据边界\s*[（(]", line) or re.search(r"证据边界\s*[：:]", line)
+            ]
+            tokens = re.findall(r"\b(?:" + "|".join(BOUNDARY_TOKENS) + r")\b", "\n".join(boundary_lines))
+            if len(boundary_lines) != 1 or len(tokens) != 1:
+                failures.append(f"delivery_claim_boundary:C{number}")
+        if contract.get("temporal_mode_per_claim"):
+            temporal_lines = [line for line in block.splitlines() if re.search(r"时态\s*[：:]", line)]
+            if not temporal_lines:
+                heading_tokens = re.findall(
+                    r"\b(?:" + "|".join(TEMPORAL_TOKENS) + r")\b",
+                    block.splitlines()[0],
+                )
+                if heading_tokens:
+                    temporal_lines = [block.splitlines()[0]]
+            tokens = re.findall(r"\b(?:" + "|".join(TEMPORAL_TOKENS) + r")\b", "\n".join(temporal_lines))
+            if len(temporal_lines) != 1 or len(tokens) != 1:
+                failures.append(f"delivery_claim_temporal:C{number}")
+                continue
+            if tokens[0] == "STATE_AT_AS_OF" and not re.search(
+                r"覆盖(?:至|到)|coverage_through|状态(?:持续|截至)至", block, re.IGNORECASE
+            ):
+                failures.append(f"delivery_claim_state_without_coverage:C{number}")
+            if tokens[0] == "ABSENCE_BY_AS_OF":
+                corpus = re.search(r"索引|语料|公告清单|披露清单|corpus", block, re.IGNORECASE)
+                dates = set(re.findall(r"(?:19|20)\d{2}-\d{2}-\d{2}", block))
+                if not corpus or len(dates) < 2:
+                    failures.append(f"delivery_claim_absence_without_corpus:C{number}")
+
+    if contract.get("one_next_evidence_object"):
+        section = markdown_section(report, r"唯一.*下一|下一验证")
+        if not one_next_evidence_object(section):
+            failures.append("delivery_next_evidence_object")
+    return list(dict.fromkeys(failures))
+
+
+def compact_arguments(value: Any, limit: int = 2000) -> str:
+    if isinstance(value, str):
+        raw = value
+    else:
+        raw = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return raw if len(raw) <= limit else raw[:limit] + "…"
+
+
+def tool_result_text(data: dict[str, Any]) -> str:
+    values: list[str] = []
+
+    def visit(value: Any) -> None:
+        if isinstance(value, str):
+            values.append(value)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+        elif isinstance(value, dict):
+            for key, item in value.items():
+                if key in {"message", "text", "output", "content", "error", "stderr"}:
+                    visit(item)
+
+    visit(data)
+    return "\n".join(values)
+
+
+def result_failure_reason(data: dict[str, Any], text: str) -> str | None:
+    message = data.get("message")
+    explicit = data.get("isError") is True or (
+        isinstance(message, dict) and message.get("isError") is True
+    )
+    if explicit:
+        return "isError"
+    codes = [int(match) for match in EXIT_CODE.findall(text)]
+    if any(code != 0 for code in codes):
+        return "nonzero_exit_code"
+    if re.search(
+        r"(?im)(?:^\s*(?:fetch failed|traceback\b)|^.*no such file or directory\b)",
+        text,
+    ):
+        return "command_error_text"
+    return None
+
+
+def trace_contract_failures(metrics: dict[str, Any], contract: dict[str, Any]) -> list[str]:
+    failures = []
+    trace = metrics.get("tool_trace")
+    if not isinstance(trace, list):
+        return ["delivery_tool_trace_missing"]
+    calls = [row for row in trace if row.get("event") == "call"]
+    results = [row for row in trace if row.get("event") == "result"]
+    research = [row for row in calls if row.get("name") in {"bash", "web_search"}]
+    investing_reads = [
+        row
+        for row in calls
+        if row.get("name") == "read"
+        and "references/investing.md" in str(row.get("arguments", ""))
+    ]
+    read_complete_sequence = None
+    if investing_reads:
+        call_id = investing_reads[0].get("call_id")
+        completed = [row["sequence"] for row in results if row.get("call_id") == call_id]
+        if completed:
+            read_complete_sequence = min(completed)
+    first_research_sequence = research[0]["sequence"] if research else None
+    if contract.get("profile_loaded_before_research") and (
+        read_complete_sequence is None
+        or first_research_sequence is None
+        or read_complete_sequence >= first_research_sequence
+    ):
+        failures.append("delivery_profile_not_loaded_before_research")
+    if contract.get("official_index_first_for_ashare"):
+        if not research or "ashare_disclosures.py" not in str(research[0].get("arguments", "")):
+            failures.append("delivery_official_index_not_first")
+    return failures
+
+
+def receipt_tool_trace(metrics: dict[str, Any]) -> list[dict[str, Any]]:
+    """Keep order/failure evidence without copying arbitrary tool arguments."""
+    trace = metrics.get("tool_trace")
+    if not isinstance(trace, list):
+        return []
+    safe = []
+    for row in trace:
+        if not isinstance(row, dict):
+            continue
+        arguments = str(row.get("arguments", ""))
+        markers = []
+        if "references/investing.md" in arguments:
+            markers.append("investing_profile")
+        if "ashare_disclosures.py" in arguments:
+            markers.append("ashare_disclosure_index")
+        safe.append(
+            {
+                key: row.get(key)
+                for key in (
+                    "sequence",
+                    "event",
+                    "call_id",
+                    "name",
+                    "failed",
+                    "failure_reason",
+                )
+                if key in row
+            }
+        )
+        if markers:
+            safe[-1]["argument_markers"] = markers
+    return safe
 
 
 def recover_workspace_report(workspace: Path, destination: Path) -> dict[str, Any] | None:
@@ -527,6 +807,8 @@ def parse_dsh_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
     tool_call_attempts: Counter[str] = Counter()
     tool_names_by_call_id: dict[str, str] = {}
     budget_denied_call_ids: set[str] = set()
+    tool_trace: list[dict[str, Any]] = []
+    tool_failure_records: list[tuple[str | None, str, str]] = []
     session_id = None
     session_cwd = None
     provider = None
@@ -545,7 +827,7 @@ def parse_dsh_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
     malformed_lines = 0
     retry_events = 0
 
-    for event in events:
+    for sequence, event in enumerate(events):
         event_type = event.get("type")
         if not isinstance(event_type, str):
             event_type = "?"
@@ -595,15 +877,41 @@ def parse_dsh_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
             call_id = data.get("callId")
             if isinstance(call_id, str):
                 tool_names_by_call_id[call_id] = resolved_name
+            tool_trace.append(
+                {
+                    "sequence": sequence,
+                    "event": "call",
+                    "call_id": call_id if isinstance(call_id, str) else None,
+                    "name": resolved_name,
+                    "arguments": compact_arguments(data.get("arguments")),
+                }
+            )
         elif event_type == "tool/result":
             serialized = json.dumps(data, ensure_ascii=False, sort_keys=True)
+            message = data.get("message")
+            source = message.get("source") if isinstance(message, dict) else None
+            call_id = data.get("callId")
+            if not isinstance(call_id, str):
+                call_id = source.get("callId") if isinstance(source, dict) else None
+            resolved_name = tool_names_by_call_id.get(call_id, "?")
+            result_text = tool_result_text(data)
+            failure_reason = result_failure_reason(data, result_text)
+            tool_trace.append(
+                {
+                    "sequence": sequence,
+                    "event": "result",
+                    "call_id": call_id if isinstance(call_id, str) else None,
+                    "name": resolved_name,
+                    "failed": failure_reason is not None,
+                    "failure_reason": failure_reason,
+                }
+            )
+            if failure_reason is not None:
+                tool_failure_records.append((call_id, resolved_name, failure_reason))
             if (
                 BUDGET_GUARD_TOOL_REASON in serialized
                 or BUDGET_GUARD_WEB_REASON in serialized
             ):
-                message = data.get("message")
-                source = message.get("source") if isinstance(message, dict) else None
-                call_id = source.get("callId") if isinstance(source, dict) else None
                 if isinstance(call_id, str):
                     budget_denied_call_ids.add(call_id)
 
@@ -623,6 +931,11 @@ def parse_dsh_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
     budget_denied: Counter[str] = Counter(
         tool_names_by_call_id.get(call_id, "?")
         for call_id in budget_denied_call_ids
+    )
+    tool_failures: Counter[str] = Counter(
+        name
+        for call_id, name, _reason in tool_failure_records
+        if call_id not in budget_denied_call_ids
     )
     tool_calls = tool_call_attempts - budget_denied
     return {
@@ -646,6 +959,18 @@ def parse_dsh_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
         "tool_call_attempts_by_name": dict(sorted(tool_call_attempts.items())),
         "budget_denied_tool_calls": sum(budget_denied.values()),
         "budget_denied_tool_calls_by_name": dict(sorted(budget_denied.items())),
+        "tool_result_failures": sum(tool_failures.values()),
+        "tool_result_failures_by_name": dict(sorted(tool_failures.items())),
+        "tool_result_failure_reasons": dict(
+            sorted(
+                Counter(
+                    reason
+                    for call_id, _name, reason in tool_failure_records
+                    if call_id not in budget_denied_call_ids
+                ).items()
+            )
+        ),
+        "tool_trace": tool_trace,
         "web_search": tool_calls["web_search"],
         "host_retry_events": retry_events,
         "malformed_jsonl_lines": malformed_lines,
@@ -822,6 +1147,7 @@ def run_one(
             "tool_calls": metrics.get("tool_calls"),
             "tool_call_attempts": metrics.get("tool_call_attempts"),
             "budget_denied_tool_calls": metrics.get("budget_denied_tool_calls"),
+            "tool_result_failures": metrics.get("tool_result_failures"),
             "wall_seconds": wall_seconds,
         },
         "budget_usage": {
@@ -836,6 +1162,13 @@ def run_one(
         "budget_denied_tool_calls_by_name": metrics.get(
             "budget_denied_tool_calls_by_name", {}
         ),
+        "tool_result_failures_by_name": metrics.get(
+            "tool_result_failures_by_name", {}
+        ),
+        "tool_result_failure_reasons": metrics.get(
+            "tool_result_failure_reasons", {}
+        ),
+        "tool_trace": receipt_tool_trace(metrics),
         "invoked_skills": skills,
         "raw_session": (
             {"path": raw_path.name, "sha256": BASE.sha256_file(raw_path)}

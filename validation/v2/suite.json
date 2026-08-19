@@ -61,7 +61,9 @@
             "root_uses_evidence_language": true,
             "one_boundary_per_claim": true,
             "temporal_mode_per_claim": true,
-            "one_next_evidence_object": true
+            "one_next_evidence_object": true,
+            "profile_loaded_before_research": true,
+            "official_index_first_for_ashare": true
           }
         }
       ]

@@ -83,25 +83,22 @@ def select_plan(
 
 
 def shared_instruction(args: argparse.Namespace) -> str:
-    active_tool_budget = max(0, args.max_tool_calls - 4)
     return (
         f"统一运行日期为 {args.run_date.isoformat()}。任务内显式 as-of 优先；不得使用其后的信息回填。\n"
         f"宿主预算上限：{args.max_non_cached_input_tokens} 非缓存输入 token、"
         f"{args.max_tool_calls} 次工具调用、{args.max_web_searches} 次 Web 搜索、"
-        f"{args.max_wall_seconds} 秒。主动研究最多使用 {active_tool_budget} 次工具调用，"
-        "逐次自计数并为初始加载、必要写入和收尾保留 4 次；到达主动上限就用现有证据交付。"
-        "失败动作不换同义工具重试，不启动子代理。\n"
+        f"{args.max_wall_seconds} 秒，由宿主计量和强制执行；不得估算已用或剩余次数。"
+        "收到一次预算拒绝就用现有证据交付；失败动作不换同义工具重试，不启动子代理。\n"
         "封闭任务禁止外部检索。开放网络任务把每个承重来源快照保存到工作区 sources/。\n"
         "最终消息只交付任务结果，不提及评测、评分规则、运行计量或本指令。"
     )
 
 
 def trigger_instruction(args: argparse.Namespace) -> str:
-    active_tool_budget = max(0, args.max_tool_calls - 4)
     return (
         f"统一运行日期为 {args.run_date.isoformat()}。"
-        f"本次最多使用 {active_tool_budget} 次主动工具调用，"
-        "逐次自计数并为必要写入和收尾保留 4 次；达到上限就用现有材料交付。"
+        f"本次宿主最多执行 {args.max_tool_calls} 次工具调用和 {args.max_web_searches} 次 Web 搜索；"
+        "不得估算已用或剩余次数，收到一次预算拒绝就用现有材料交付。"
         "失败动作不换同义工具重试，不启动子代理。\n\n"
     )
 
@@ -220,6 +217,19 @@ def run_session(
             shutil.copy2(artifact / "recovered-report.md", artifact / "report.md")
             report_available = True
             report_origin = "workspace_recovery"
+    delivery_failures: list[str] = []
+    trace_failures: list[str] = []
+    delivery_contract = case.get("delivery_regression")
+    if isinstance(delivery_contract, dict):
+        delivery_failures = DSH.delivery_contract_failures(
+            stdout,
+            delivery_contract,
+            saved_report=(workspace / "report.md").is_file()
+            or (workspace / "REPORT.md").is_file(),
+        )
+        trace_failures = DSH.trace_contract_failures(metrics, delivery_contract)
+        failures.extend(delivery_failures)
+        failures.extend(trace_failures)
     if metrics:
         expected = {
             "provider": args.expected_provider,
@@ -274,6 +284,7 @@ def run_session(
             "tool_calls": metrics.get("tool_calls"),
             "tool_call_attempts": metrics.get("tool_call_attempts"),
             "budget_denied_tool_calls": metrics.get("budget_denied_tool_calls"),
+            "tool_result_failures": metrics.get("tool_result_failures"),
             "wall_seconds": wall_seconds,
         },
         "host_signature": DSH.host_signature(metrics),
@@ -282,6 +293,13 @@ def run_session(
         "budget_denied_tool_calls_by_name": metrics.get(
             "budget_denied_tool_calls_by_name", {}
         ),
+        "tool_result_failures_by_name": metrics.get(
+            "tool_result_failures_by_name", {}
+        ),
+        "tool_result_failure_reasons": metrics.get(
+            "tool_result_failure_reasons", {}
+        ),
+        "tool_trace": DSH.receipt_tool_trace(metrics),
         "invoked_skills": skills,
         "raw_session": (
             {"path": raw.name, "sha256": BASE.sha256_file(raw)}
@@ -315,6 +333,8 @@ def run_session(
         "anchor_files": anchor_count,
         "wall_seconds": wall_seconds,
         "mechanical_failures": failures,
+        "delivery_contract_failures": delivery_failures,
+        "trace_contract_failures": trace_failures,
         "artifact": str(artifact.relative_to(args.output)),
     }
     BASE.write_json(artifact / "collection-result.json", row)

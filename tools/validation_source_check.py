@@ -160,6 +160,8 @@ def validate_protocol(suite: dict[str, Any]) -> dict[str, Any]:
         "one_boundary_per_claim": True,
         "temporal_mode_per_claim": True,
         "one_next_evidence_object": True,
+        "profile_loaded_before_research": True,
+        "official_index_first_for_ashare": True,
     }
     if delivery_contract != expected_delivery_contract:
         raise ContractError("natural delivery regression contract is incomplete")

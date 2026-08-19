@@ -30,6 +30,7 @@ EXPECTED_PACKAGE_FILES = {
     "SKILL.md",
     "references/anchors.md",
     "references/investing.md",
+    "scripts/ashare_disclosures.py",
     "scripts/free_market_observations.py",
     "tools/anchor_check.py",
 }

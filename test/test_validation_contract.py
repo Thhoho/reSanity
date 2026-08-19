@@ -37,7 +37,7 @@ class ValidationContractTests(unittest.TestCase):
             "references/formal-audit.md",
             "普通总结、编码、改写或一般问答",
             "即使对象尚未给全也应使用",
-            "UNBENCHMARKED_CURRENT",
+            "不得把工程测试、机械审计或有限评审升级成研究有效",
             "用户可直接阅读的回答始终是第一交付物",
             "用户提供且要求接受的信息可作为 `USER_PROVIDED` 前提",
             "报告交付与机械审计是两条独立轴",
@@ -126,6 +126,8 @@ class ValidationContractTests(unittest.TestCase):
                 "one_boundary_per_claim": True,
                 "temporal_mode_per_claim": True,
                 "one_next_evidence_object": True,
+                "profile_loaded_before_research": True,
+                "official_index_first_for_ashare": True,
             },
         )
         prelayers = json.loads(
@@ -197,9 +199,9 @@ class ValidationContractTests(unittest.TestCase):
     def test_method_contract_keeps_missingness_and_budget_rules_hot(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         investing = (ROOT / "references/investing.md").read_text(encoding="utf-8")
-        self.assertIn("预算都是硬上限", skill)
-        self.assertIn("主动研究最多使用 `N-4` 次", skill)
-        self.assertIn("这 4 次不是候补研究预算", skill)
+        self.assertIn("只有用户或宿主明确给出", skill)
+        self.assertIn("不得猜测上限、已用次数或剩余次数", skill)
+        self.assertIn("宿主计量与拒绝回执优先于模型估算", skill)
         self.assertIn("不得以待执行的工具请求、协议标记或半截表格结束", skill)
         self.assertIn("未知、未闭合或 `INSUFFICIENT` 是报告内容", skill)
         self.assertIn("随后才尝试来源快照、宿主收据和审计收据", skill)
@@ -209,7 +211,10 @@ class ValidationContractTests(unittest.TestCase):
         self.assertIn("只有一项具名证据对象", skill)
         self.assertIn("用它裁决一个承重分叉", skill)
         self.assertIn("标题、根结论、摘要、表格和主张卡", investing)
-        self.assertIn("现实中是否已形成未知", investing)
+        self.assertIn("现实中是否已经形成 {target} 未知", investing)
+        self.assertIn("ashare_disclosures.py", investing)
+        self.assertIn("不得把 profile 读取与搜索并行", investing)
+        self.assertIn("没有额外证成时默认 `EVENT_BY_DATE`", investing)
         self.assertIn("无可归属暴露", investing)
         self.assertIn("同一血缘链", investing)
         self.assertIn("公司整体积压、收入、利润和经营现金流", investing)
@@ -272,6 +277,7 @@ class ValidationContractTests(unittest.TestCase):
         self.assertIn("cordis.patch.yml", package["files"])
         self.assertEqual(package["dsh"]["bundle"]["patch"], "./cordis.patch.yml")
         self.assertNotIn("scripts/", package["files"])
+        self.assertIn("scripts/ashare_disclosures.py", package["files"])
         self.assertIn("scripts/free_market_observations.py", package["files"])
         self.assertIn("scripts/tier1_providers.py", package["files"])
 

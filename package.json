@@ -35,6 +35,7 @@
     "ARCHITECTURE.md",
     "README.md",
     "LICENSE",
+    "scripts/ashare_disclosures.py",
     "scripts/free_market_observations.py",
     "scripts/tier1_providers.py",
     "tools/anchor_check.py",
